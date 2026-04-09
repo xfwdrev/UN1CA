@@ -1,0 +1,5 @@
+LOG "- Patching /vendor/etc/fstab.exynos990"
+EVAL "sed -i \"/[[:space:]]\/data[[:space:]]/ s|resgid=5678|resgid=5678,inlinecrypt|g\" \"$WORK_DIR/vendor/etc/fstab.exynos990\""
+EVAL "sed -i \"/[[:space:]]\/data[[:space:]]/ s|fileencryption=ice|fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized,keydirectory=/metadata/vold/metadata_encryption|g\" \"$WORK_DIR/vendor/etc/fstab.exynos990\""
+EVAL "sed -i '/[[:space:]]\/keydata[[:space:]]/d' \"$WORK_DIR/vendor/etc/fstab.exynos990\""
+EVAL "sed -i '/[[:space:]]\/keyrefuge[[:space:]]/d' \"$WORK_DIR/vendor/etc/fstab.exynos990\""
