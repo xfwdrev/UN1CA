@@ -29,11 +29,11 @@ if [ ! -f "$WORK_DIR/system/system/priv-app/ChoiDujour/ChoiDujour.apk" ]; then
 fi
 
 # Always show One UI minor version
-SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
-    "smali_classes4/com/samsung/android/settings/deviceinfo/softwareinfo/OneUIVersionPreferenceController.smali" "replace" \
-    'isDeviceWithMicroVersion()Z' \
-    'move-result p0' \
-    'const/4 p0, 0x1'
+# SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+#     "smali_classes4/com/samsung/android/settings/deviceinfo/softwareinfo/OneUIVersionPreferenceController.smali" "replace" \
+#     'isDeviceWithMicroVersion()Z' \
+#     'move-result p0' \
+#     'const/4 p0, 0x1'
 
 # Show real device model number
 SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
