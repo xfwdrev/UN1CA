@@ -1,0 +1,42 @@
+service ksmbd_start /system/bin/ksmbd.mountd -n
+    user root
+    group root
+    class main
+    disabled
+    oneshot
+
+service ksmbd_stop /system/bin/ksmbd.control -s
+    user root
+    group root
+    class main
+    disabled
+    oneshot
+
+on property:sys.boot_completed=1 #For release binary we can change to && property:ro.debuggable=1
+    exec /system/bin/ksmbd.control -d all
+    exec /system/bin/ksmbd.control -d ipc
+    exec /system/bin/ksmbd.control -d oplock
+
+on property:ksmbd.r=true
+    exec /system/bin/ksmbd.control -r
+
+service ksmbd_add_user /system/bin/ksmbd.adduser -v -a ${ksmbd.au.u} -p ${ksmbd.au.p}
+    user root
+    group root
+    class main
+    disabled
+    oneshot
+
+service ksmbd_delete_user /system/bin/ksmbd.adduser -v -d ${ksmbd.au.u}
+    user root
+    group root
+    class main
+    disabled
+    oneshot
+
+on post-fs-data
+    mkdir /data/misc/hwrs/ 0770 system root
+    mkdir /data/misc/hwrs/ksmbd 0770 system root
+    copy /system/etc/ksmbd.conf /data/misc/hwrs/ksmbd/ksmbd.conf
+    chown system root /data/misc/hwrs/ksmbd/ksmbd.conf
+    chmod 640 /data/misc/hwrs/ksmbd/ksmbd.conf
