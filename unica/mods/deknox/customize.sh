@@ -22,9 +22,7 @@ if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "35" ] && \
     HEX_PATCH "$WORK_DIR/system/system/bin/vold" "2c74696d655f6f66667365743d2564" "000000000000000000000000000000"
     LOG_STEP_OUT
 fi
-DELETE_FROM_WORK_DIR "system" "system/bin/dualdard"
 DELETE_FROM_WORK_DIR "system" "system/bin/sdp_cryptod"
-DELETE_FROM_WORK_DIR "system" "system/etc/init/dualdard.rc"
 DELETE_FROM_WORK_DIR "system" "system/etc/init/kpp.init.rc"
 DELETE_FROM_WORK_DIR "system" "system/etc/init/kss.init.rc"
 DELETE_FROM_WORK_DIR "system" "system/etc/init/sdp_cryptod.rc"
@@ -39,12 +37,9 @@ DELETE_FROM_WORK_DIR "system" "system/etc/permissions/privapp-permissions-com.sa
 DELETE_FROM_WORK_DIR "system" "system/etc/permissions/signature-permissions-com.samsung.android.kgclient.xml"
 DELETE_FROM_WORK_DIR "system" "system/etc/sysconfig/preinstalled-packages-com.samsung.android.coldwalletservice.xml"
 DELETE_FROM_WORK_DIR "system" "system/lib/android.hardware.weaver@1.0.so"
-DELETE_FROM_WORK_DIR "system" "system/lib/hidl_comm_ddar_client.so"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib/libandroid_servers.so" 0 0 644 "u:object_r:system_lib_file:s0"
-DELETE_FROM_WORK_DIR "system" "system/lib/libdualdar.so"
 DELETE_FROM_WORK_DIR "system" "system/lib/libepm.so"
 DELETE_FROM_WORK_DIR "system" "system/lib/libhermes_cred.so"
-DELETE_FROM_WORK_DIR "system" "system/lib/libkeyutils.so"
 DELETE_FROM_WORK_DIR "system" "system/lib/libknox_filemanager.so"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib/libmdf.so" 0 0 644 "u:object_r:system_lib_file:s0"
 DELETE_FROM_WORK_DIR "system" "system/lib/libmdfpp_req.so"
@@ -53,11 +48,8 @@ DELETE_FROM_WORK_DIR "system" "system/lib/libsdp_crypto.so"
 DELETE_FROM_WORK_DIR "system" "system/lib/libsdp_kekm.so"
 DELETE_FROM_WORK_DIR "system" "system/lib/libsdp_sdk.so"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib/libsqlite.so" 0 0 644 "u:object_r:system_lib_file:s0"
-DELETE_FROM_WORK_DIR "system" "system/lib/vendor.samsung.hardware.tlc.ddar@1.0.so"
 DELETE_FROM_WORK_DIR "system" "system/lib64/android.hardware.weaver@1.0.so"
-DELETE_FROM_WORK_DIR "system" "system/lib64/hidl_comm_ddar_client.so"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib64/libandroid_servers.so" 0 0 644 "u:object_r:system_lib_file:s0"
-DELETE_FROM_WORK_DIR "system" "system/lib64/libdualdar.so"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib64/libepm.so" 0 0 644 "u:object_r:system_lib_file:s0"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib64/libmdf.so" 0 0 644 "u:object_r:system_lib_file:s0"
 DELETE_FROM_WORK_DIR "system" "system/lib64/libmdfpp_req.so"
@@ -65,7 +57,6 @@ DELETE_FROM_WORK_DIR "system" "system/lib64/libsdp_crypto.so"
 DELETE_FROM_WORK_DIR "system" "system/lib64/libsdp_kekm.so"
 DELETE_FROM_WORK_DIR "system" "system/lib64/libsdp_sdk.so"
 ADD_TO_WORK_DIR "$DONOR" "system" "system/lib64/libsqlite.so" 0 0 644 "u:object_r:system_lib_file:s0"
-DELETE_FROM_WORK_DIR "system" "system/lib64/vendor.samsung.hardware.tlc.ddar@1.0.so"
 DELETE_FROM_WORK_DIR "system" "system/priv-app/HdmApk"
 DELETE_FROM_WORK_DIR "system" "system/priv-app/KnoxFrameBufferProvider"
 DELETE_FROM_WORK_DIR "system" "system/priv-app/KnoxGuard"
@@ -115,28 +106,8 @@ APPLY_PATCH "system" "system/framework/services.jar" \
     "$MODPATH/sdp/services.jar/0001-Nuke-Knox-SDP.patch"
 
 # SEC_PRODUCT_FEATURE_KNOX_SUPPORT_DUAL_DAR
-APPLY_PATCH "system" "system/app/Traceur/Traceur.apk" \
-    "$MODPATH/ddar/Traceur.apk/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/framework/framework.jar" \
-    "$MODPATH/ddar/framework.jar/0001-Nuke-Knox-DualDAR.patch"
 APPLY_PATCH "system" "system/framework/framework.jar" \
     "$MODPATH/ddar/framework.jar/0002-Nuke-MDF.patch"
-APPLY_PATCH "system" "system/framework/knoxsdk.jar" \
-    "$MODPATH/ddar/knoxsdk.jar/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/framework/services.jar" \
-    "$MODPATH/ddar/services.jar/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/priv-app/DeviceDiagnostics/DeviceDiagnostics.apk" \
-    "$MODPATH/ddar/DeviceDiagnostics.apk/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/priv-app/KnoxCore/KnoxCore.apk" \
-    "$MODPATH/ddar/KnoxCore.apk/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/priv-app/ManagedProvisioning/ManagedProvisioning.apk" \
-    "$MODPATH/ddar/ManagedProvisioning.apk/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
-    "$MODPATH/ddar/SecSettings.apk/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system" "system/priv-app/SecSettingsIntelligence/SecSettingsIntelligence.apk" \
-    "$MODPATH/ddar/SecSettingsIntelligence.apk/0001-Nuke-Knox-DualDAR.patch"
-APPLY_PATCH "system_ext" "priv-app/StorageManager/StorageManager.apk" \
-    "$MODPATH/ddar/StorageManager.apk/0001-Nuke-Knox-DualDAR.patch"
 
 # SEC_PRODUCT_FEATURE_KNOX_SUPPORT_HDM
 DECODE_APK "system" "system/framework/knoxsdk.jar"
