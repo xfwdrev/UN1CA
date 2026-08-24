@@ -1,18 +1,18 @@
-From a94954e481adbed6272d4ab000a2bb4c848cef4c Mon Sep 17 00:00:00 2001
-From: Salvo Giangreco <giangrecosalvo9@gmail.com>
-Date: Thu, 30 Oct 2025 20:28:06 +0100
+From 1c0fb644c6f1fa0ed79e50937aa4c1f8b786bb93 Mon Sep 17 00:00:00 2001
+From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
+Date: Mon, 24 Aug 2026 16:11:35 +0800
 Subject: [PATCH] Add token argument in unlockCeStorage
 
 ---
- smali/android/os/IVold$Default.smali                 | 2 +-
- smali/android/os/IVold$Stub$Proxy.smali              | 6 ++++--
- smali/android/os/IVold$Stub.smali                    | 8 ++++++--
- smali/android/os/IVold.smali                         | 2 +-
- smali/com/android/server/StorageManagerService.smali | 6 ++++--
- 5 files changed, 16 insertions(+), 8 deletions(-)
+ smali/android/os/IVold$Default.smali          |  2 +-
+ smali/android/os/IVold$Stub$Proxy.smali       |  6 ++--
+ smali/android/os/IVold$Stub.smali             |  8 ++++--
+ smali/android/os/IVold.smali                  |  2 +-
+ .../server/StorageManagerService.smali        | 28 +++++++++++++++----
+ 5 files changed, 34 insertions(+), 12 deletions(-)
 
 diff --git a/smali/android/os/IVold$Default.smali b/smali/android/os/IVold$Default.smali
-index f309c5f46..8037e7de4 100644
+index 4443489a..f4b81273 100644
 --- a/smali/android/os/IVold$Default.smali
 +++ b/smali/android/os/IVold$Default.smali
 @@ -1356,7 +1356,7 @@
@@ -25,7 +25,7 @@ index f309c5f46..8037e7de4 100644
      .annotation system Ldalvik/annotation/Throws;
          value = {
 diff --git a/smali/android/os/IVold$Stub$Proxy.smali b/smali/android/os/IVold$Stub$Proxy.smali
-index 723a90129..a9266b171 100644
+index ea030aa0..6898b2a6 100644
 --- a/smali/android/os/IVold$Stub$Proxy.smali
 +++ b/smali/android/os/IVold$Stub$Proxy.smali
 @@ -6017,7 +6017,7 @@
@@ -49,7 +49,7 @@ index 723a90129..a9266b171 100644
      iget-object p0, p0, Landroid/os/IVold$Stub$Proxy;->mRemote:Landroid/os/IBinder;
  
 diff --git a/smali/android/os/IVold$Stub.smali b/smali/android/os/IVold$Stub.smali
-index b3694388f..ba29d8e78 100644
+index dac8a5eb..e707927f 100644
 --- a/smali/android/os/IVold$Stub.smali
 +++ b/smali/android/os/IVold$Stub.smali
 @@ -1400,13 +1400,17 @@
@@ -73,7 +73,7 @@ index b3694388f..ba29d8e78 100644
      invoke-virtual {p3}, Landroid/os/Parcel;->writeNoException()V
  
 diff --git a/smali/android/os/IVold.smali b/smali/android/os/IVold.smali
-index ff953826b..49838439a 100644
+index 35b525bb..891eab95 100644
 --- a/smali/android/os/IVold.smali
 +++ b/smali/android/os/IVold.smali
 @@ -979,7 +979,7 @@
@@ -86,29 +86,64 @@ index ff953826b..49838439a 100644
          value = {
              Landroid/os/RemoteException;
 diff --git a/smali/com/android/server/StorageManagerService.smali b/smali/com/android/server/StorageManagerService.smali
-index e5e12046a..352f3b87d 100644
+index 92b3e709..1421df72 100644
 --- a/smali/com/android/server/StorageManagerService.smali
 +++ b/smali/com/android/server/StorageManagerService.smali
-@@ -15940,7 +15940,7 @@
+@@ -15939,8 +15939,8 @@
+     return p0
  .end method
  
- .method public final unlockCeStorage(I[B)V
+-.method public final unlockCeStorage(I[B)V
 -    .locals 1
++.method public final unlockCeStorage(I[B[B)V
 +    .locals 2
  
      invoke-virtual {p0}, Landroid/os/storage/IStorageManager$Stub;->unlockCeStorage_enforcePermission()V
  
-@@ -15952,7 +15952,9 @@
+@@ -15948,13 +15948,29 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_0
++    if-eqz v0, :cond_1
  
      iget-object v0, p0, Lcom/android/server/StorageManagerService;->mVold:Landroid/os/IVold;
  
 -    invoke-interface {v0, p1, p2}, Landroid/os/IVold;->unlockCeStorage(I[B)V
-+    const-string v1, "!"
++    invoke-static {p2}, Lcom/android/internal/util/ArrayUtils;->isEmpty([B)Z
 +
-+    invoke-interface {v0, p1, v1, p2}, Landroid/os/IVold;->unlockCeStorage(ILjava/lang/String;[B)V
++    move-result v1
++
++    if-eqz v1, :cond_0
++
++    const-string p2, "!"
++
++    goto :goto_0
  
      :cond_0
++    invoke-static {p2}, Lcom/android/internal/util/HexDump;->toHexString([B)Ljava/lang/String;
++
++    move-result-object p2
++
++    :goto_0
++    invoke-interface {v0, p1, p2, p3}, Landroid/os/IVold;->unlockCeStorage(ILjava/lang/String;[B)V
++
++    :cond_1
      iget-object p2, p0, Lcom/android/server/StorageManagerService;->mLock:Ljava/lang/Object;
+ 
+     monitor-enter p2
+@@ -15962,9 +15978,9 @@
+     :try_start_0
+     iget-object p0, p0, Lcom/android/server/StorageManagerService;->mCeUnlockedUsers:Lcom/android/server/StorageManagerService$WatchedUnlockedUsers;
+ 
+-    iget-object v0, p0, Lcom/android/server/StorageManagerService$WatchedUnlockedUsers;->users:[I
++    iget-object p3, p0, Lcom/android/server/StorageManagerService$WatchedUnlockedUsers;->users:[I
+ 
+-    invoke-static {v0, p1}, Lcom/android/internal/util/ArrayUtils;->appendInt([II)[I
++    invoke-static {p3, p1}, Lcom/android/internal/util/ArrayUtils;->appendInt([II)[I
+ 
+     move-result-object p1
+ 
 -- 
-2.51.1
+2.53.0
 
