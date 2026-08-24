@@ -1,8 +1,9 @@
-From 39b955fab2f7693f57a7042325f353fb8d8d3d3e Mon Sep 17 00:00:00 2001
-From: Salvo Giangreco <giangrecosalvo9@gmail.com>
-Date: Sat, 30 Aug 2025 00:54:45 +0200
+From 173a100ba730254bd4531144913652e448c4bddb Mon Sep 17 00:00:00 2001
+From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
+Date: Sun, 23 Aug 2026 01:25:33 +0800
 Subject: [PATCH] Nuke Knox SDP
 
+Signed-off-by: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
 ---
  .../database/sqlite/SQLiteDatabase.smali      | 119 ++++--------------
  .../database/sqlite/SQLiteSdpHelper.smali     |  96 +-------------
@@ -393,10 +394,10 @@ index f6b55773..00000000
 -    return-object p0
 -.end method
 diff --git a/smali_classes6/com/android/internal/widget/LockPatternUtils.smali b/smali_classes6/com/android/internal/widget/LockPatternUtils.smali
-index 66c23e01..85ab4e7f 100644
+index adc25537..a19ccdb2 100644
 --- a/smali_classes6/com/android/internal/widget/LockPatternUtils.smali
 +++ b/smali_classes6/com/android/internal/widget/LockPatternUtils.smali
-@@ -1686,35 +1686,9 @@
+@@ -1663,35 +1663,9 @@
  .end method
  
  .method private blacklist isSdpSupportedSecureFolder(I)Z
@@ -434,7 +435,7 @@ index 66c23e01..85ab4e7f 100644
  
      return p0
  .end method
-@@ -1775,7 +1749,7 @@
+@@ -1752,7 +1726,7 @@
      return v1
  .end method
  
@@ -534,12 +535,12 @@ index 72927fe4..5c4c5032 100644
      return-void
  .end method
 diff --git a/smali_classes6/com/samsung/android/knox/dar/DarRune.smali b/smali_classes6/com/samsung/android/knox/dar/DarRune.smali
-index 1a9e1f13..39e7a822 100644
+index ee6d0949..88ad617c 100644
 --- a/smali_classes6/com/samsung/android/knox/dar/DarRune.smali
 +++ b/smali_classes6/com/samsung/android/knox/dar/DarRune.smali
 @@ -10,7 +10,7 @@
  
- .field public static final blacklist KNOX_SUPPORT_DAR_DUAL_DO:Z = true
+ .field public static final blacklist KNOX_SUPPORT_DAR_DUAL_DO:Z = false
  
 -.field public static final blacklist KNOX_SUPPORT_DAR_SDP:Z = true
 +.field public static final blacklist KNOX_SUPPORT_DAR_SDP:Z = false
@@ -547,12 +548,12 @@ index 1a9e1f13..39e7a822 100644
  .field public static final blacklist KNOX_SUPPORT_DAR_SDP_LOG:Z = true
  
 diff --git a/smali_classes6/com/samsung/android/rune/CoreRune.smali b/smali_classes6/com/samsung/android/rune/CoreRune.smali
-index 3619eba0..5f48b370 100644
+index f747f74c..72f4301e 100644
 --- a/smali_classes6/com/samsung/android/rune/CoreRune.smali
 +++ b/smali_classes6/com/samsung/android/rune/CoreRune.smali
 @@ -1194,7 +1194,7 @@
  
- .field public static final blacklist KNOX_SUPPORT_DAR_DUAL_DO:Z = true
+ .field public static final blacklist KNOX_SUPPORT_DAR_DUAL_DO:Z = false
  
 -.field public static final blacklist KNOX_SUPPORT_DAR_SDP:Z = true
 +.field public static final blacklist KNOX_SUPPORT_DAR_SDP:Z = false
@@ -560,5 +561,5 @@ index 3619eba0..5f48b370 100644
  .field public static final blacklist KNOX_SUPPORT_DUAL_APP:Z = true
  
 -- 
-2.51.1
+2.53.0
 
