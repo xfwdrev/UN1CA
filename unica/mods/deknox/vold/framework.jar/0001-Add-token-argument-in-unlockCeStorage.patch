@@ -1,14 +1,18 @@
-From 368a926cee2f89080c16f5414f6c79ccf3844f31 Mon Sep 17 00:00:00 2001
-From: Salvo Giangreco <giangrecosalvo9@gmail.com>
-Date: Thu, 30 Oct 2025 20:27:50 +0100
+From 2d05c244b304033bf691dc0646062ac1bf0e6b35 Mon Sep 17 00:00:00 2001
+From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
+Date: Mon, 24 Aug 2026 17:33:03 +0800
 Subject: [PATCH] Add token argument in unlockCeStorage
 
 ---
- smali_classes3/android/os/IVold$Default.smali    | 2 +-
- smali_classes3/android/os/IVold$Stub$Proxy.smali | 6 ++++--
- smali_classes3/android/os/IVold$Stub.smali       | 8 ++++++--
- smali_classes3/android/os/IVold.smali            | 2 +-
- 4 files changed, 12 insertions(+), 6 deletions(-)
+ smali_classes3/android/os/IVold$Default.smali             | 2 +-
+ smali_classes3/android/os/IVold$Stub$Proxy.smali          | 6 ++++--
+ smali_classes3/android/os/IVold$Stub.smali                | 8 ++++++--
+ smali_classes3/android/os/IVold.smali                     | 2 +-
+ .../android/os/storage/IStorageManager$Default.smali      | 2 +-
+ .../android/os/storage/IStorageManager$Stub$Proxy.smali   | 4 +++-
+ .../android/os/storage/IStorageManager$Stub.smali         | 6 +++++-
+ smali_classes3/android/os/storage/IStorageManager.smali   | 2 +-
+ 8 files changed, 22 insertions(+), 10 deletions(-)
 
 diff --git a/smali_classes3/android/os/IVold$Default.smali b/smali_classes3/android/os/IVold$Default.smali
 index 5d093c5b..d49b2bfa 100644
@@ -84,6 +88,73 @@ index 72d8cbb7..2865e429 100644
      .annotation system Ldalvik/annotation/Throws;
          value = {
              Landroid/os/RemoteException;
+diff --git a/smali_classes3/android/os/storage/IStorageManager$Default.smali b/smali_classes3/android/os/storage/IStorageManager$Default.smali
+index 1cf1d724..5e894e83 100644
+--- a/smali_classes3/android/os/storage/IStorageManager$Default.smali
++++ b/smali_classes3/android/os/storage/IStorageManager$Default.smali
+@@ -1195,7 +1195,7 @@
+     return p0
+ .end method
+ 
+-.method public blacklist unlockCeStorage(I[B)V
++.method public blacklist unlockCeStorage(I[B[B)V
+     .locals 0
+     .annotation system Ldalvik/annotation/Throws;
+         value = {
+diff --git a/smali_classes3/android/os/storage/IStorageManager$Stub$Proxy.smali b/smali_classes3/android/os/storage/IStorageManager$Stub$Proxy.smali
+index 65e2026f..30ec5dd1 100644
+--- a/smali_classes3/android/os/storage/IStorageManager$Stub$Proxy.smali
++++ b/smali_classes3/android/os/storage/IStorageManager$Stub$Proxy.smali
+@@ -5615,7 +5615,7 @@
+     throw p0
+ .end method
+ 
+-.method public blacklist unlockCeStorage(I[B)V
++.method public blacklist unlockCeStorage(I[B[B)V
+     .locals 3
+     .annotation system Ldalvik/annotation/Throws;
+         value = {
+@@ -5644,6 +5644,8 @@
+ 
+     invoke-virtual {v0, p2}, Landroid/os/Parcel;->writeByteArray([B)V
+ 
++    invoke-virtual {v0, p3}, Landroid/os/Parcel;->writeByteArray([B)V
++
+     iget-object p0, p0, Landroid/os/storage/IStorageManager$Stub$Proxy;->mRemote:Landroid/os/IBinder;
+ 
+     const/16 p1, 0x40
+diff --git a/smali_classes3/android/os/storage/IStorageManager$Stub.smali b/smali_classes3/android/os/storage/IStorageManager$Stub.smali
+index 5b405e61..f8c2b7d7 100644
+--- a/smali_classes3/android/os/storage/IStorageManager$Stub.smali
++++ b/smali_classes3/android/os/storage/IStorageManager$Stub.smali
+@@ -2737,9 +2737,13 @@
+ 
+     move-result-object v2
+ 
++    invoke-virtual {p2}, Landroid/os/Parcel;->createByteArray()[B
++
++    move-result-object v3
++
+     invoke-virtual {p2}, Landroid/os/Parcel;->enforceNoDataAvail()V
+ 
+-    invoke-virtual {p0, v1, v2}, Landroid/os/storage/IStorageManager$Stub;->unlockCeStorage(I[B)V
++    invoke-virtual {p0, v1, v2, v3}, Landroid/os/storage/IStorageManager$Stub;->unlockCeStorage(I[B[B)V
+ 
+     invoke-virtual {p3}, Landroid/os/Parcel;->writeNoException()V
+ 
+diff --git a/smali_classes3/android/os/storage/IStorageManager.smali b/smali_classes3/android/os/storage/IStorageManager.smali
+index aca52b5e..e681d751 100644
+--- a/smali_classes3/android/os/storage/IStorageManager.smali
++++ b/smali_classes3/android/os/storage/IStorageManager.smali
+@@ -776,7 +776,7 @@
+     .end annotation
+ .end method
+ 
+-.method public abstract blacklist unlockCeStorage(I[B)V
++.method public abstract blacklist unlockCeStorage(I[B[B)V
+     .annotation system Ldalvik/annotation/Throws;
+         value = {
+             Landroid/os/RemoteException;
 -- 
-2.51.1
+2.53.0
 
