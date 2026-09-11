@@ -281,23 +281,23 @@ fi
 # - 4.19.x and below: unsupported
 # - 5.4.x-5.10.x: backport (https://github.com/namjaejeon/ksmbd.git)
 # - 5.15.x and above: supported
-if [ -f "$WORK_DIR/system/system/priv-app/StorageShare/StorageShare.apk" ]; then
-    EXTRACT_KERNEL_IMAGE
-    if ! grep -q "ksmbd" "$TMP_DIR/out/kernel"; then
-        PATCHED=true
-        DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.addshare"
-        DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.adduser"
-        DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.control"
-        DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.mountd"
-        DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.tools"
-        DELETE_FROM_WORK_DIR "system" "system/etc/default-permissions/default-permissions-com.samsung.android.hwresourceshare.storage.xml"
-        DELETE_FROM_WORK_DIR "system" "system/etc/init/ksmbd.rc"
-        DELETE_FROM_WORK_DIR "system" "system/etc/permissions/privapp-permissions-com.samsung.android.hwresourceshare.storage.xml"
-        DELETE_FROM_WORK_DIR "system" "system/etc/sysconfig/preinstalled-packages-com.samsung.android.hwresourceshare.storage.xml"
-        DELETE_FROM_WORK_DIR "system" "system/etc/ksmbd.conf"
-        DELETE_FROM_WORK_DIR "system" "system/priv-app/StorageShare"
-    fi
-fi
+# if [ -f "$WORK_DIR/system/system/priv-app/StorageShare/StorageShare.apk" ]; then
+#     EXTRACT_KERNEL_IMAGE
+#     if ! grep -q "ksmbd" "$TMP_DIR/out/kernel"; then
+#         PATCHED=true
+#         DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.addshare"
+#         DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.adduser"
+#         DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.control"
+#         DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.mountd"
+#         DELETE_FROM_WORK_DIR "system" "system/bin/ksmbd.tools"
+#         DELETE_FROM_WORK_DIR "system" "system/etc/default-permissions/default-permissions-com.samsung.android.hwresourceshare.storage.xml"
+#         DELETE_FROM_WORK_DIR "system" "system/etc/init/ksmbd.rc"
+#         DELETE_FROM_WORK_DIR "system" "system/etc/permissions/privapp-permissions-com.samsung.android.hwresourceshare.storage.xml"
+#         DELETE_FROM_WORK_DIR "system" "system/etc/sysconfig/preinstalled-packages-com.samsung.android.hwresourceshare.storage.xml"
+#         DELETE_FROM_WORK_DIR "system" "system/etc/ksmbd.conf"
+#         DELETE_FROM_WORK_DIR "system" "system/priv-app/StorageShare"
+#     fi
+# fi
 
 # Ensure Sem eBPF Smart Hotspot functionality (pre-API 35)
 # - Check for TARGET_PLATFORM_SDK_VERSION < 35 as 4.14 kernel support has been deprecated in Android V
