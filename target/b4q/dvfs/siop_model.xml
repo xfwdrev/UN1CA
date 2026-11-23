@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE siop_document [
+<!ELEMENT siop_document (temperatures, levels, components, scenarios?)>
+<!ELEMENT temperatures (temp+)>
+<!ELEMENT temp EMPTY>
+<!ATTLIST temp
+          type (AP|BAT|USB|CHG|PA|WIFI) #REQUIRED
+          default CDATA "1"
+          min CDATA "1"
+          max CDATA "1"
+          step CDATA "1"
+          init CDATA "5"
+          hold CDATA "1"
+          gap CDATA "0">
+<!ELEMENT levels (level+)>
+<!ELEMENT level EMPTY>
+<!ATTLIST level
+          id CDATA #REQUIRED
+          temp CDATA #REQUIRED>
+<!ELEMENT components (component+)>
+<!ELEMENT component (limiter+)>
+<!ATTLIST component
+          name CDATA #REQUIRED
+          tempType CDATA #REQUIRED>
+<!ELEMENT scenarios (scenario*, scenario_group*)>
+<!ELEMENT scenario (limiter+)>
+<!-- you can use below delimiter on scenario name -->
+<!-- "!" : intent, ":" : package, "," : plural    -->
+<!ATTLIST scenario
+          name CDATA #REQUIRED
+          tempType CDATA #REQUIRED
+          priority CDATA "0">
+<!ELEMENT scenario_group (scenario+)>
+<!ELEMENT scenario EMPTY>
+<!ATTLIST scenario
+          name CDATA #REQUIRED
+          limiter CDATA #REQUIRED
+          step CDATA "-1"
+          delay CDATA "0"
+          cond (sensor_check|for_request|for_temporary) #IMPLIED
+          temp CDATA "370"
+          gap CDATA "20"
+          value CDATA #REQUIRED>
+<!ELEMENT limiter EMPTY>
+<!ATTLIST limiter
+          name CDATA #REQUIRED
+          step CDATA "-1"
+          delay CDATA "0"
+          cond (sensor_check|for_request|for_temporary) #IMPLIED
+          temp CDATA "370"
+          gap CDATA "20"
+          value CDATA #REQUIRED>
+]>
+
+<siop_document>
+
+    <overheatcontrol>
+        <complex>
+            <EMR    formula="SKIN"            temp="490" max_cpu="921600" max_gpu="220" />
+            <LTB    formula="SKIN*BAT"  temp="495.440" />
+            <LCD    formula="SKIN*BAT"  temp="475.420" />
+            <GDMLTB formula="SKIN*BAT"  temp="475.430" />
+            <GDM    formula="SKIN*BAT"  temp="455.400" />
+            <SS     formula="SKIN*BAT"  temp="540.480" />
+            <SS     formula="SKIN*PA"   temp="540.620" region="JP" />
+        </complex>
+    </overheatcontrol>
+
+    <modelsettings>
+        <Skin type="LRP2"/>
+        <sensors>
+            <LTB_SENSOR type="(PALM*LIGHT*FLICKER)+(POSITION*LIGHT*FLICKER)" />
+        </sensors>
+    </modelsettings>
+
+    <components>
+
+        <component name="AP" tempType="SKIN" >
+            <limiter name="OverLimit"        temp="360:390:410:440"   value="2246400:2131200:1651200:-1" />
+            <limiter name="JobRestriction"   temp="360"   value="-1:1"                       />
+
+            <limiter name="CPUFreqMax" multistage="1" 
+                     temp="360:390:410:440" p="50" i="1" d="30" unit="1000"
+                     load_gap="2:2:1:1"
+                     min_high="1996800:1766400:1401600:1036800" 
+                     min="1766400:1536000:1171200:921600" />
+
+            <limiter name="GPUFreqMax" multistage="1"
+                     temp="360:390:410:440" p="50" i="1" d="30" unit="0.4"
+                     min="439:364:285:220" />
+        </component>
+
+        <component name="CP" tempType="SKIN">
+            <limiter name="LTE"       temp="440"         value="-1:10"  />
+            <limiter name="NR"        temp="420:430:450" value="-1:6:254" />
+            <limiter name="NRscg"     temp="420:425:440" value="-1:6:10"  />
+            <limiter name="LTESub"    temp="440"         value="-1:10"  />
+            <limiter name="NRSub"     temp="420:430:450" value="-1:6:254" />
+            <limiter name="NRscgSub"  temp="420:425:440" value="-1:6:10"  />
+            <limiter name="CpLowMode" temp="350"         value="-1:2"   />
+            <limiter name="CpLowMode" value="-1" region="China" />
+        </component>
+
+        <component name="CP" tempType="SKIN" region="DCM">
+            <limiter name="LTE"       temp="430"         value="-1:10" />
+            <limiter name="NR"        temp="410:420:440" value="-1:6:254" />
+            <limiter name="NRscg"     temp="410:415:430" value="-1:6:10" />
+            <limiter name="LTESub"    temp="430"         value="-1:10" />
+            <limiter name="NRSub"     temp="410:420:440" value="-1:6:254" />
+            <limiter name="NRscgSub"  temp="410:415:430" value="-1:6:10" />
+            <limiter name="CpLowMode" temp="340"         value="-1:2" />
+        </component>
+
+        <component name="CP" tempType="SKIN" region="DSA">
+            <limiter name="LTE"       temp="440"         value="-1:10"   />
+            <limiter name="NRscg"     temp="420:425:440" value="-1:6:10" />
+            <limiter name="LTESub"    temp="440"         value="-1:10"   />
+            <limiter name="NRscgSub"  temp="420:425:440" value="-1:6:10" />
+            <limiter name="CpLowMode" temp="350"         value="-1:2"    />
+        </component>
+
+        <component name="DISPLAY" tempType="SKIN">
+            <limiter name="Brightness"  temp="399:400:420:450:470" value="-1:215:172:126:101" />
+        </component>
+
+        <component name="CHG+DISPLAY" tempType="SKIN">
+            <limiter name="Charging" temp="360" value="-1:80" />
+        </component>
+
+        <component name="WIFI" tempType="SKIN">
+            <limiter name="WifiTput"    tempType="SKIN" temp="450" p="50" i="2" d="50" unit="0.1" min="200" />
+        </component>
+
+    </components>
+
+    <scenarios>
+
+        <scenario name="DefaultLowHeatMode" tempType="SKIN">
+            <limiter name="OverLimit"        temp="360:370:390:420"   value="1996800:1881600:1651200:-1" />
+            <limiter name="CPUFreqMax" multistage="1" 
+                     temp="360:370:390:420" p="50" i="1" d="30" unit="1000" stay="40"
+                     load_gap="2:2:1:1"
+                     min_high="1996800:1766400:1401600:1036800" 
+                     min="1766400:1536000:1171200:921600" />
+
+            <limiter name="GPUFreqMax" multistage="1"
+                     temp="360:370:390:420" p="50" i="1" d="30" unit="0.4" stay="40"
+                     min="364:285:220:220" />
+        </scenario>
+
+        <scenario name="HeavyLoadApp" tempType="SKIN" priority="1">
+            <limiter name="CPUFreqMax" tempType="SKIN" temp="395" p="50" i="1" d="30" unit="1000" min="1036800"/>
+            <limiter name="GPUFreqMax" tempType="SKIN" temp="395" p="50" i="1" d="30" unit="0.4"  min="220" />
+        </scenario>
+
+        <scenario name="ScreenOffInCall" tempType="SKIN" priority="1" >
+            <limiter name="Charging" temp="340:360" value="-1:70" />
+        </scenario>
+
+        <scenario name="ScreenOff" tempType="SKIN" priority="2" >
+            <limiter name="DexOptCpuset"     temp="340:350" value="-1:1" />
+        </scenario>
+
+        <scenario name="EarlySIP" tempType="SKIN" priority="1">
+            <limiter name="CPUFreqMax" temp="350:360:380:400:420"         value="-1:2246400:1881600:1881600:1651200" />
+            <limiter name="OverLimit"  temp="360"                         value="2707200:2476800:2246400:-1" />
+        </scenario>
+
+        <scenario name="SIP" tempType="SKIN" priority="1">
+            <limiter name="CPUFreqMax" temp="350:360:380:400:420:440:470" value="-1:2246400:1881600:1881600:1651200:1171200:1036800" />
+            <limiter name="OverLimit"           temp="360"                         value="2707200:2476800:2246400:-1" />
+        </scenario>
+
+        <scenario name="SIPStart" tempType="SKIN" priority="3" >
+            <limiter name="CPUFreqMax" cond="for_temporary" temp="400:420:440:470" value="-1:2476800:1881600:1036800" />
+            <limiter name="GPUFreqMax" cond="for_temporary" temp="450"             value="-1:364"  />
+        </scenario>
+
+        <scenario name="AppStart" tempType="SKIN" priority="3" >
+            <limiter name="CPUFreqMax" cond="for_temporary" temp="400:420:440:470" value="-1:2707200:1881600:1036800" />
+            <limiter name="GPUFreqMax" cond="for_temporary" temp="450"             value="-1:364"  />
+        </scenario>
+
+        <scenario name="Badge" tempType="SKIN" priority="3" >
+            <limiter name="CPUFreqMax" cond="for_temporary" temp="400:420:440:470" value="-1:2476800:1881600:1036800" />
+            <limiter name="GPUFreqMax" cond="for_temporary" temp="450"             value="-1:364"  />
+        </scenario>
+
+        <scenario name="CallStart" tempType="SKIN" priority="3" >
+            <limiter name="CPUFreqMax" cond="for_temporary" temp="400:420:440:470" value="-1:2476800:1881600:1036800" />
+            <limiter name="GPUFreqMax" cond="for_temporary" temp="450"             value="-1:364"  />
+        </scenario>
+
+        <scenario name="WakeUp" tempType="SKIN" priority="3" >
+            <limiter name="CPUFreqMax" cond="for_temporary" temp="400:420:440:470" value="-1:2476800:1881600:1036800" />
+            <limiter name="GPUFreqMax" cond="for_temporary" temp="450"             value="-1:364"  />
+        </scenario>
+
+        <scenario name="CameraControl" tempType="SKIN" priority="2" >
+            <limiter name="CameraFps"  temp="320:340:370:390"         value="-1:20:20:15" />
+            <limiter name="Brightness" temp="360:380:400:420:450" value="-1:215:172:126:101" />
+        </scenario>
+
+        <scenario name="Navigation" tempType="SKIN" priority="1" >
+            <limiter name="CameraFps"  temp="320:340:370:390"         value="-1:20:20:15" />
+            <limiter name="Brightness" temp="360:380:400:420:450" value="-1:215:172:126:101" />
+        </scenario>
+
+        <scenario name="AppCastGame" tempType="SKIN" priority="1" >
+            <limiter name="Brightness" temp="360:380:400:420:450" value="-1:215:172:126:101" />
+        </scenario>
+
+        <scenario name="DexStabilizerMode" tempType="SKIN" priority="4" >
+            <limiter name="CPUFreqMax" value="921600" />
+        </scenario>
+
+        <scenario name="SmartSwitchTransfer" tempType="SKIN" priority="2" >
+            <limiter name="WifiP2pTput" tempType="SKIN" temp="360" p="50" i="2" d="50" unit="0.1" min="300"/>
+        </scenario>
+
+        <scenario name="HighBrightness"  tempType="SKIN*BAT" priority="1" region="XSG" >
+            <limiter name="LTE"      temp="450.420:470.430:490.450" value="-1:10:10"   delay="0:1800:0" />
+            <limiter name="NR"       temp="440.420:460.430:480.450" value="-1:254:254" delay="0:1800:0" />
+            <limiter name="NRscg"    temp="440.420:450.430:470.450" value="-1:10:10"   delay="0:1800:0" />
+            <limiter name="LTESub"   temp="450.420:470.430:490.450" value="-1:10:10"   delay="0:1800:0" />
+            <limiter name="NRSub"    temp="440.420:460.430:480.450" value="-1:254:254" delay="0:1800:0" />
+            <limiter name="NRscgSub" temp="440.420:450.430:470.450" value="-1:10:10"   delay="0:1800:0" />
+        </scenario>
+
+        <scenario name="HighBrightness"  tempType="SKIN*BAT" priority="1" region="KSA" >
+            <limiter name="LTE"      temp="450.420:470.430:490.450" value="-1:10:10"   delay="0:1800:0" />
+            <limiter name="NR"       temp="440.420:460.430:480.450" value="-1:254:254" delay="0:1800:0" />
+            <limiter name="NRscg"    temp="440.420:450.430:470.450" value="-1:10:10"   delay="0:1800:0" />
+            <limiter name="LTESub"   temp="450.420:470.430:490.450" value="-1:10:10"   delay="0:1800:0" />
+            <limiter name="NRSub"    temp="440.420:460.430:480.450" value="-1:254:254" delay="0:1800:0" />
+            <limiter name="NRscgSub" temp="440.420:450.430:470.450" value="-1:10:10"   delay="0:1800:0" />
+        </scenario>
+
+        <scenario name="NRmmW" tempType="SKIN" priority="1" >
+            <limiter name="NRscg"    temp="410:420:440" value="-1:6:10" />
+            <limiter name="NRscgSub" temp="410:420:440" value="-1:6:10" />
+        </scenario>
+
+        <scenario name="AmbLow" tempType="SKIN" >
+            <limiter name="CpLowMode" temp="300:320" value="-1:2" />
+        </scenario>
+
+        <scenario name="SecCamera:com.sec.android.app.camera" tempType="SKIN" priority="1" >
+            <limiter name="PowerBackOff"    temp="400"   value="-1:1" region="VZW" />
+        </scenario>
+
+        <scenario name="SpkHeatControl" tempType="SKIN" priority="2">
+            <limiter name="SpeakerControl"          temp="340" value="-1:1" />
+            <limiter name="Charging"                temp="340" value="-1:0" />
+        </scenario>
+
+        <scenario name="LowTemp" tempType="BAT" priority="3">
+            <limiter name="CPUFreqMax" temp="-150:-70" value="1766400:-1" />
+            <limiter name="GPUFreqMax" temp="-150:-70" value="439:-1" />
+            <limiter name="Brightness" temp="-150:-70" value="169:-1" />
+            <limiter name="OverLimit"                  value="-1" />
+        </scenario>
+
+        <scenario name="PowerSharing" tempType="SKIN" priority="3" >
+            <limiter name="CPUFreqMax" step="0" temp="400:420:440:470" value="1536000:1401600:1171200:1036800" />
+            <limiter name="GPUFreqMax" temp="450"                      value="439:285" />
+            <limiter name="OverLimit"  temp="360"                      value="-1" />
+        </scenario>
+
+    </scenarios>
+
+</siop_document>

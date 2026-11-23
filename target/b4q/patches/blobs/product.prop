@@ -1,0 +1,4 @@
+# Disable Audio broadcast feature
+persist.bluetooth.samsung.leaudio.livecast=false
+bluetooth.profile.bap.broadcast.source.enabled=false
+bluetooth.profile.opp.enabled=false
