@@ -8,7 +8,7 @@ Subject: [PATCH] Nuke Knox HDM
  1 file changed, 2 insertions(+), 298 deletions(-)
 
 diff --git a/smali/com/android/server/enterprise/EnterpriseDeviceManagerServiceImpl.smali b/smali/com/android/server/enterprise/EnterpriseDeviceManagerServiceImpl.smali
-index e55426fe..8a7421b5 100644
+index 691c4c7e..fe3a8e00 100644
 --- a/smali/com/android/server/enterprise/EnterpriseDeviceManagerServiceImpl.smali
 +++ b/smali/com/android/server/enterprise/EnterpriseDeviceManagerServiceImpl.smali
 @@ -1420,37 +1420,12 @@
@@ -51,7 +51,7 @@ index e55426fe..8a7421b5 100644
      :goto_11
      return-void
  .end method
-@@ -3466,277 +3441,6 @@
+@@ -3468,277 +3443,6 @@
  
      invoke-static {v0, v3}, Landroid/os/ServiceManager;->addService(Ljava/lang/String;Landroid/os/IBinder;)V
  
@@ -235,7 +235,7 @@ index e55426fe..8a7421b5 100644
 -
 -    iput-object v6, v2, Lcom/android/server/enterprise/hdm/HdmVendorController;->mISehKhdm:Lvendor/samsung/hardware/khdm/ISehKhdm;
 -
--    const-string v0, "29"
+-    const-string v0, "32"
 -
 -    invoke-static {v0}, Ljava/lang/Integer;->parseInt(Ljava/lang/String;)I
 -
@@ -330,5 +330,5 @@ index e55426fe..8a7421b5 100644
  
      sget v2, Lcom/android/server/enterprise/appconfig/ApplicationRestrictionsService;->$r8$clinit:I
 -- 
-2.54.0
+2.55.0
 
