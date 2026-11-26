@@ -1,58 +1,49 @@
-From 7c7c611cb5b63ed537c775443b571a2bc6d39094 Mon Sep 17 00:00:00 2001
-From: Salvo Giangreco <giangrecosalvo9@gmail.com>
-Date: Tue, 9 Sep 2025 00:11:17 +0200
+From 3f528d844383cf33a1979dec0eb1305d4ca4591d Mon Sep 17 00:00:00 2001
+From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
+Date: Thu, 26 Nov 2026 23:14:53 +0800
 Subject: [PATCH] Add Adaptive color tone feature
 
+Signed-off-by: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
 ---
- .../android/settings/DisplaySettings$4.smali  |  14 +
- .../target/DisplayColorResetAction.smali      | 372 ++++++++++--------
+ .../android/settings/DisplaySettings$4.smali  |  12 +
+ .../target/DisplayColorResetAction.smali      | 376 ++++++++++--------
  .../bixby/target/WhiteBalanceAction.smali     |  58 ++-
- .../BixbyRoutineActionHandler.smali           |   4 +-
  .../settings/display/NewModePreview$3.smali   |  72 +++-
  .../settings/display/NewModePreview$6.smali   |  53 ++-
- .../settings/display/NewModePreview.smali     |  92 +++--
- .../SecAdaptiveDisplaySettings$21.smali       |  41 +-
- .../display/SecAdaptiveDisplaySettings.smali  |  26 ++
- .../SecEADPreferenceController.smali          |   2 +-
- .../eternal/provider/items/DisplayItem.smali  | 246 ++++++------
- 11 files changed, 633 insertions(+), 347 deletions(-)
+ .../settings/display/NewModePreview.smali     |  92 ++++-
+ .../SecAdaptiveDisplaySettings$19.smali       |  41 +-
+ .../display/SecAdaptiveDisplaySettings.smali  |  34 +-
+ .../SecEADPreferenceController.smali          |  19 +-
+ .../eternal/provider/items/DisplayItem.smali  | 302 +++++++-------
+ 10 files changed, 680 insertions(+), 379 deletions(-)
 
-diff --git a/smali_classes2/com/android/settings/DisplaySettings$4.smali b/smali_classes2/com/android/settings/DisplaySettings$4.smali
-index 808b4059a..6346aa81f 100644
---- a/smali_classes2/com/android/settings/DisplaySettings$4.smali
-+++ b/smali_classes2/com/android/settings/DisplaySettings$4.smali
-@@ -33,6 +33,18 @@
+diff --git a/smali/com/android/settings/DisplaySettings$4.smali b/smali/com/android/settings/DisplaySettings$4.smali
+index c1ba7834..61ee5db9 100644
+--- a/smali/com/android/settings/DisplaySettings$4.smali
++++ b/smali/com/android/settings/DisplaySettings$4.smali
+@@ -44,6 +44,18 @@
+     invoke-static {v6, v7, v8}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
-     invoke-static {v7, v8, v9}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+     :cond_0
++    const-string v7, "ead_enabled"
++
++    invoke-static {v6, v7, v8}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
++
++    const-string v7, "notified_ead_camera_use"
++
++    invoke-static {v6, v7, v8}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
++
++    const-string v7, "notified_ead_camera_use_routine"
++
++    invoke-static {v6, v7, v8}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
++
+     new-instance v7, Lcom/samsung/android/settings/display/ScreenModeSettingManager;
  
-+    const-string v8, "ead_enabled"
-+
-+    invoke-static {v7, v8, v9}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
-+
-+    const-string v8, "notified_ead_camera_use"
-+
-+    invoke-static {v7, v8, v9}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
-+
-+    const-string v8, "notified_ead_camera_use_routine"
-+
-+    invoke-static {v7, v8, v9}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
-+
-     new-instance v8, Lcom/samsung/android/settings/display/ScreenModeSettingManager;
- 
-     invoke-direct {v8, v0}, Lcom/samsung/android/settings/display/ScreenModeSettingManager;-><init>(Landroid/content/Context;)V
-@@ -1196,6 +1208,8 @@
- 
-     return-void
- 
-+    nop
-+
-     :array_0
-     .array-data 4
-         0x3f000000    # 0.5f
-diff --git a/smali_classes4/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali b/smali_classes4/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali
-index 908e5df0c..4a02bb87c 100644
---- a/smali_classes4/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali
-+++ b/smali_classes4/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali
+     invoke-direct {v7, v0}, Lcom/samsung/android/settings/display/ScreenModeSettingManager;-><init>(Landroid/content/Context;)V
+diff --git a/smali_classes3/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali b/smali_classes3/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali
+index a023b677..6981f10a 100644
+--- a/smali_classes3/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali
++++ b/smali_classes3/com/samsung/android/settings/bixby/target/DisplayColorResetAction.smali
 @@ -5,332 +5,376 @@
  
  # virtual methods
@@ -87,7 +78,7 @@ index 908e5df0c..4a02bb87c 100644
 -    move-result v1
 +    move-result v4
  
--    const-string/jumbo v3, "screen_mode_setting"
+-    const-string v3, "screen_mode_setting"
 +    if-eqz v4, :cond_0
  
 -    invoke-static {v0, v3, v1}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
@@ -96,54 +87,54 @@ index 908e5df0c..4a02bb87c 100644
 -    move-result v3
 +    goto :goto_0
  
--    const-string/jumbo v4, "vividness_intensity"
+-    const-string v4, "vividness_intensity"
 +    :cond_0
 +    move v4, v3
  
--    const-string/jumbo v5, "sec_display_temperature_green"
+-    const-string v5, "sec_display_temperature_green"
 +    :goto_0
 +    invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
  
--    const-string/jumbo v6, "sec_display_temperature_blue"
+-    const-string v6, "sec_display_temperature_blue"
 +    move-result-object v6
  
--    const-string/jumbo v7, "sec_display_temperature_red"
+-    const-string v7, "sec_display_temperature_red"
 +    const-string v7, "SEC_FLOATING_FEATURE_LCD_CONFIG_DEFAULT_SCREEN_MODE"
  
--    const/4 v8, 0x2
+-    const-string v8, "sec_display_preset_index"
 +    invoke-virtual {v6, v7}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;)I
  
--    const-string/jumbo v9, "sec_display_preset_index"
+-    const/4 v9, 0x2
 +    move-result v6
  
--    const/4 v10, 0x1
-+    const-string/jumbo v8, "screen_mode_setting"
+-    const/4 v10, 0x0
++    const-string v8, "screen_mode_setting"
  
--    const/4 v11, 0x0
+-    const/4 v11, 0x1
 +    invoke-static {v1, v8, v6}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
 -    if-eq v1, v3, :cond_0
 +    move-result v8
  
 -    :goto_0
--    move v1, v10
-+    const-string/jumbo v9, "vividness_intensity"
+-    move v1, v11
++    const-string v9, "vividness_intensity"
  
 -    goto :goto_1
-+    const-string/jumbo v10, "sec_display_temperature_green"
++    const-string v10, "sec_display_temperature_green"
  
 -    :cond_0
--    invoke-static {v0, v9, v8}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
-+    const-string/jumbo v11, "sec_display_temperature_blue"
+-    invoke-static {v0, v8, v9}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
++    const-string v11, "sec_display_temperature_blue"
  
 -    move-result v1
-+    const-string/jumbo v12, "sec_display_temperature_red"
++    const-string v12, "sec_display_temperature_red"
  
--    if-eq v1, v8, :cond_1
-+    const/4 v13, 0x2
+-    if-eq v1, v9, :cond_1
++    const-string v13, "sec_display_preset_index"
  
 -    goto :goto_0
-+    const-string/jumbo v14, "sec_display_preset_index"
++    const/4 v14, 0x2
 +
 +    if-eq v6, v8, :cond_1
 +
@@ -153,20 +144,20 @@ index 908e5df0c..4a02bb87c 100644
 +    goto :goto_2
  
      :cond_1
--    invoke-static {v0, v7, v11}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
-+    invoke-static {v1, v14, v13}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+-    invoke-static {v0, v7, v10}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
++    invoke-static {v1, v13, v14}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
 -    move-result v1
 +    move-result v6
  
 -    if-eqz v1, :cond_2
-+    if-eq v6, v13, :cond_2
++    if-eq v6, v14, :cond_2
  
 -    goto :goto_0
 +    goto :goto_1
  
      :cond_2
--    invoke-static {v0, v6, v11}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+-    invoke-static {v0, v6, v10}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
 +    invoke-static {v1, v12, v3}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
 -    move-result v1
@@ -179,7 +170,7 @@ index 908e5df0c..4a02bb87c 100644
 +    goto :goto_1
  
      :cond_3
--    invoke-static {v0, v5, v11}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+-    invoke-static {v0, v5, v10}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
 +    invoke-static {v1, v11, v3}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
 -    move-result v1
@@ -209,7 +200,7 @@ index 908e5df0c..4a02bb87c 100644
 -    if-eqz v1, :cond_5
 +    if-eqz v6, :cond_6
  
--    invoke-static {v0, v4, v11}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+-    invoke-static {v0, v4, v10}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
 +    invoke-static {v1, v9, v3}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
 -    move-result v1
@@ -222,7 +213,7 @@ index 908e5df0c..4a02bb87c 100644
 +    goto :goto_1
  
 -    :cond_5
--    move v1, v11
+-    move v1, v10
 +    :cond_6
 +    move v6, v3
  
@@ -231,7 +222,7 @@ index 908e5df0c..4a02bb87c 100644
 +    :goto_2
 +    const-string v8, "blue_light_filter"
  
--    invoke-static {v0, v3, v11}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+-    invoke-static {v0, v3, v10}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
 +    invoke-static {v1, v8, v3}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
 -    move-result v12
@@ -240,14 +231,14 @@ index 908e5df0c..4a02bb87c 100644
 -    if-eqz v12, :cond_6
 +    if-eqz v15, :cond_7
  
--    move v12, v10
+-    move v12, v11
 +    const/4 v15, 0x1
  
 -    goto :goto_2
 +    goto :goto_3
  
 -    :cond_6
--    move v12, v11
+-    move v12, v10
 +    :cond_7
 +    move v15, v3
  
@@ -284,16 +275,16 @@ index 908e5df0c..4a02bb87c 100644
 -    invoke-virtual {v13, v2}, Lcom/samsung/android/settings/display/ScreenModeSettingManager;->setScreenMode(I)V
 +    invoke-virtual {v2, v5}, Lcom/samsung/android/settings/display/ScreenModeSettingManager;->setScreenMode(I)V
  
--    invoke-static {v0, v9, v8}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
-+    invoke-static {v1, v14, v13}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v8, v9}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
++    invoke-static {v1, v13, v14}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
--    invoke-static {v0, v7, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v7, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v12, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
--    invoke-static {v0, v6, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v6, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v11, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
--    invoke-static {v0, v5, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v5, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v10, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
      invoke-static {}, Lcom/samsung/android/settings/Rune;->supportVividness()Z
@@ -303,7 +294,7 @@ index 908e5df0c..4a02bb87c 100644
 -    if-eqz v2, :cond_7
 +    if-eqz v2, :cond_9
  
--    invoke-static {v0, v4, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v4, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v9, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
 -    :cond_7
@@ -311,7 +302,7 @@ index 908e5df0c..4a02bb87c 100644
 +    :cond_9
 +    if-eqz v15, :cond_b
  
--    invoke-static {v0, v3, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v3, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v8, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
      new-instance v2, Landroid/content/Intent;
@@ -368,17 +359,17 @@ index 908e5df0c..4a02bb87c 100644
  
      const-string v2, "blue_light_filter_adaptive_mode"
  
--    invoke-static {v0, v2, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v2, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    const/4 v7, 0x1
  
--    invoke-static {v0, v4, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v4, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v2, v7}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
 -    goto :goto_3
 +    invoke-static {v1, v5, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
 -    :cond_8
--    invoke-static {v0, v4, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v4, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    goto :goto_4
  
 -    :goto_3
@@ -390,7 +381,7 @@ index 908e5df0c..4a02bb87c 100644
 +    :goto_4
      const-string v2, "blue_light_filter_type"
  
--    invoke-static {v0, v2, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v2, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v2, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
      const-string v2, "blue_light_filter_on_time"
@@ -426,7 +417,7 @@ index 908e5df0c..4a02bb87c 100644
  
      const-string v2, "blue_light_filter_night_dim"
  
--    invoke-static {v0, v2, v11}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
+-    invoke-static {v0, v2, v10}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
 +    invoke-static {v1, v2, v3}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
  
 -    :cond_9
@@ -457,7 +448,7 @@ index 908e5df0c..4a02bb87c 100644
 +    iget-object v3, v0, Lcom/samsung/android/settings/bixby/target/actions/Action;->mContext:Landroid/content/Context;
  
 -    const-string v5, ", "
-+    const v4, 0x7f14250e
++    const v4, 0x7f152ae3
 +
 +    invoke-virtual {v3, v4}, Landroid/content/Context;->getString(I)Ljava/lang/String;
 +
@@ -465,7 +456,7 @@ index 908e5df0c..4a02bb87c 100644
 +
 +    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
-+    const-string/jumbo v3, "sec_ead"
++    const-string v3, "sec_ead"
 +
 +    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
@@ -496,7 +487,7 @@ index 908e5df0c..4a02bb87c 100644
 +    :cond_e
 +    iget-object v5, v0, Lcom/samsung/android/settings/bixby/target/actions/Action;->mContext:Landroid/content/Context;
  
-     const v6, 0x7f1428ab
+     const v6, 0x7f152e96
  
 -    invoke-virtual {v1, v6}, Landroid/content/Context;->getString(I)Ljava/lang/String;
 +    invoke-virtual {v5, v6}, Landroid/content/Context;->getString(I)Ljava/lang/String;
@@ -507,8 +498,8 @@ index 908e5df0c..4a02bb87c 100644
 -    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  
--    const-string/jumbo v1, "screen_mode"
-+    const-string/jumbo v5, "screen_mode"
+-    const-string v1, "screen_mode"
++    const-string v5, "screen_mode"
  
 -    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +    invoke-virtual {v1, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
@@ -537,7 +528,7 @@ index 908e5df0c..4a02bb87c 100644
 +    :cond_10
 +    iget-object v3, v0, Lcom/samsung/android/settings/bixby/target/actions/Action;->mContext:Landroid/content/Context;
  
-     const v4, 0x7f142566
+     const v4, 0x7f152b3a
  
 -    invoke-virtual {v1, v4}, Landroid/content/Context;->getString(I)Ljava/lang/String;
 +    invoke-virtual {v3, v4}, Landroid/content/Context;->getString(I)Ljava/lang/String;
@@ -552,9 +543,9 @@ index 908e5df0c..4a02bb87c 100644
 +    invoke-virtual {v1, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  
 -    :cond_e
--    const-string/jumbo v1, "true"
+-    const-string v1, "true"
 +    :cond_11
-+    const-string/jumbo v3, "true"
++    const-string v3, "true"
  
 -    invoke-virtual {p0}, Lcom/samsung/android/settings/bixby/target/actions/Action;->getValue()Ljava/lang/String;
 +    invoke-virtual {v0}, Lcom/samsung/android/settings/bixby/target/actions/Action;->getValue()Ljava/lang/String;
@@ -576,12 +567,12 @@ index 908e5df0c..4a02bb87c 100644
  
      invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
  
-@@ -340,40 +384,40 @@
+@@ -340,46 +384,46 @@
  
      move-result-object v2
  
--    const v3, 0x7f1424cf
-+    const v4, 0x7f1424cf
+-    const v3, 0x7f152aa2
++    const v4, 0x7f152aa2
  
 -    invoke-virtual {v1, v3, v2}, Landroid/content/Context;->getString(I[Ljava/lang/Object;)Ljava/lang/String;
 +    invoke-virtual {v3, v4, v2}, Landroid/content/Context;->getString(I[Ljava/lang/Object;)Ljava/lang/String;
@@ -603,16 +594,24 @@ index 908e5df0c..4a02bb87c 100644
 -    new-instance v3, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;
 +    new-instance v4, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;
  
--    invoke-direct {v3, p0, v1}, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;-><init>(Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction;Ljava/lang/String;)V
-+    invoke-direct {v4, v0, v2}, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;-><init>(Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction;Ljava/lang/String;)V
+-    invoke-direct {v3}, Ljava/lang/Object;-><init>()V
++    invoke-direct {v4}, Ljava/lang/Object;-><init>()V
+ 
+-    iput-object p0, v3, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;->this$0:Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction;
++    iput-object v0, v4, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;->this$0:Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction;
+ 
+-    iput-object v1, v3, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;->val$message:Ljava/lang/String;
++    iput-object v2, v4, Lcom/samsung/android/settings/bixby/target/DisplayColorResetAction$1;->val$message:Ljava/lang/String;
+ 
+     invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
  
 -    invoke-virtual {v2, v3}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
 +    invoke-virtual {v3, v4}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
  
 -    :cond_f
--    const-string/jumbo p0, "success"
+-    const-string p0, "success"
 +    :cond_12
-+    const-string/jumbo v0, "success"
++    const-string v0, "success"
  
 -    invoke-static {p0}, Lcom/samsung/android/settings/bixby/target/actions/Action;->createResult(Ljava/lang/String;)Landroid/os/Bundle;
 +    invoke-static {v0}, Lcom/samsung/android/settings/bixby/target/actions/Action;->createResult(Ljava/lang/String;)Landroid/os/Bundle;
@@ -620,8 +619,8 @@ index 908e5df0c..4a02bb87c 100644
 -    move-result-object p0
 +    move-result-object v0
  
--    const-string/jumbo v1, "target"
-+    const-string/jumbo v2, "target"
+-    const-string v1, "target"
++    const-string v2, "target"
  
 -    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 +    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
@@ -635,10 +634,10 @@ index 908e5df0c..4a02bb87c 100644
 -    return-object p0
 +    return-object v0
  .end method
-diff --git a/smali_classes4/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali b/smali_classes4/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali
-index 3be9740b9..2f07ed0e7 100644
---- a/smali_classes4/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali
-+++ b/smali_classes4/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali
+diff --git a/smali_classes3/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali b/smali_classes3/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali
+index 209eb5d6..3e7e59c2 100644
+--- a/smali_classes3/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali
++++ b/smali_classes3/com/samsung/android/settings/bixby/target/WhiteBalanceAction.smali
 @@ -225,7 +225,7 @@
  .end method
  
@@ -646,9 +645,9 @@ index 3be9740b9..2f07ed0e7 100644
 -    .locals 3
 +    .locals 4
  
-     invoke-static {}, Lcom/samsung/android/settings/Rune;->supportScreenMode()Z
+     iget-object v0, p0, Lcom/samsung/android/settings/bixby/target/actions/Action;->mContext:Landroid/content/Context;
  
-@@ -287,15 +287,38 @@
+@@ -289,15 +289,38 @@
  
      invoke-static {p0, v0, v1}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
@@ -677,21 +676,21 @@ index 3be9740b9..2f07ed0e7 100644
 +    move-result p0
 +
 +    if-eqz p0, :cond_3
-+
+ 
 +    move v1, v2
 +
 +    :cond_3
 +    if-nez v0, :cond_5
 +
 +    if-eqz v1, :cond_4
- 
++
 +    goto :goto_1
 +
 +    :cond_4
-     const-string/jumbo p0, "true"
+     const-string p0, "true"
  
      invoke-static {p0}, Lcom/samsung/android/settings/bixby/target/actions/Action;->createResult(Ljava/lang/String;)Landroid/os/Bundle;
-@@ -304,18 +327,37 @@
+@@ -306,18 +329,37 @@
  
      return-object p0
  
@@ -732,27 +731,11 @@ index 3be9740b9..2f07ed0e7 100644
      new-instance v0, Landroid/os/Bundle;
  
      invoke-direct {v0}, Landroid/os/Bundle;-><init>()V
-diff --git a/smali_classes4/com/samsung/android/settings/bixbyroutinehandler/BixbyRoutineActionHandler.smali b/smali_classes4/com/samsung/android/settings/bixbyroutinehandler/BixbyRoutineActionHandler.smali
-index 771396672..48bc5aff6 100644
---- a/smali_classes4/com/samsung/android/settings/bixbyroutinehandler/BixbyRoutineActionHandler.smali
-+++ b/smali_classes4/com/samsung/android/settings/bixbyroutinehandler/BixbyRoutineActionHandler.smali
-@@ -3238,9 +3238,9 @@
-     goto :goto_2
- 
-     :pswitch_2
--    sget-object p0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
-+    sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
- 
--    return-object v0
-+    goto :goto_2
- 
-     :pswitch_3
-     invoke-static {p1}, Lcom/samsung/android/settings/Rune;->supportPocketMode(Landroid/content/Context;)Z
-diff --git a/smali_classes4/com/samsung/android/settings/display/NewModePreview$3.smali b/smali_classes4/com/samsung/android/settings/display/NewModePreview$3.smali
-index 492177e5d..7343072b1 100644
---- a/smali_classes4/com/samsung/android/settings/display/NewModePreview$3.smali
-+++ b/smali_classes4/com/samsung/android/settings/display/NewModePreview$3.smali
-@@ -24,7 +24,7 @@
+diff --git a/smali_classes3/com/samsung/android/settings/display/NewModePreview$3.smali b/smali_classes3/com/samsung/android/settings/display/NewModePreview$3.smali
+index aae81d08..48ad9bc6 100644
+--- a/smali_classes3/com/samsung/android/settings/display/NewModePreview$3.smali
++++ b/smali_classes3/com/samsung/android/settings/display/NewModePreview$3.smali
+@@ -12,7 +12,7 @@
  
  # virtual methods
  .method public final onClick(Landroid/view/View;)V
@@ -761,81 +744,81 @@ index 492177e5d..7343072b1 100644
  
      iget-object p1, p0, Lcom/samsung/android/settings/display/NewModePreview$3;->this$0:Lcom/samsung/android/settings/display/NewModePreview;
  
-@@ -112,28 +112,78 @@
+@@ -102,28 +102,78 @@
  
-     invoke-static {v2, v3, v0}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+     invoke-static {v2, v3, v1}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
  
--    sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
+-    sget-object v1, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
 +    move-result v2
  
--    new-instance v0, Landroid/app/AlertDialog$Builder;
+-    new-instance v1, Landroid/app/AlertDialog$Builder;
 +    const/4 v3, 0x1
  
--    iget-object v2, p0, Lcom/samsung/android/settings/display/NewModePreview;->mContext:Landroid/content/Context;
+-    iget-object v2, v0, Lcom/samsung/android/settings/display/NewModePreview;->mContext:Landroid/content/Context;
 +    if-eqz v2, :cond_2
  
--    invoke-direct {v0, v2}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
+-    invoke-direct {v1, v2}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 +    move v2, v3
  
 -    const/4 v2, 0x1
 +    goto :goto_0
  
--    invoke-virtual {v0, v2}, Landroid/app/AlertDialog$Builder;->setCancelable(Z)Landroid/app/AlertDialog$Builder;
+-    invoke-virtual {v1, v2}, Landroid/app/AlertDialog$Builder;->setCancelable(Z)Landroid/app/AlertDialog$Builder;
 +    :cond_2
-+    move v2, v0
++    move v2, v1
  
--    move-result-object v0
+-    move-result-object v1
 +    :goto_0
 +    sget-object v4, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
  
--    const v2, 0x7f1428a0
-+    invoke-virtual {p0}, Lcom/android/settings/SettingsPreferenceFragment;->getContentResolver()Landroid/content/ContentResolver;
+-    const v2, 0x7f152e8a
++    invoke-virtual {v0}, Lcom/android/settings/SettingsPreferenceFragment;->getContentResolver()Landroid/content/ContentResolver;
  
--    invoke-virtual {v0, v2}, Landroid/app/AlertDialog$Builder;->setTitle(I)Landroid/app/AlertDialog$Builder;
+-    invoke-virtual {v1, v2}, Landroid/app/AlertDialog$Builder;->setTitle(I)Landroid/app/AlertDialog$Builder;
 +    move-result-object v4
  
--    move-result-object v0
+-    move-result-object v1
 +    const-string v5, "ead_enabled"
 +
-+    invoke-static {v4, v5, v0}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
++    invoke-static {v4, v5, v1}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
 +
 +    move-result v4
 +
 +    if-eqz v4, :cond_3
 +
-+    move v0, v3
++    move v1, v3
 +
 +    :cond_3
 +    if-eqz v2, :cond_4
 +
-+    if-eqz v0, :cond_4
++    if-eqz v1, :cond_4
 +
-+    const v0, 0x7f14289f
++    const v1, 0x7f152e89
 +
-+    const v2, 0x7f14289e
++    const v2, 0x7f152e88
 +
 +    goto :goto_1
 +
 +    :cond_4
 +    if-nez v2, :cond_5
 +
-+    if-eqz v0, :cond_5
++    if-eqz v1, :cond_5
 +
-+    const v0, 0x7f1428a2
++    const v1, 0x7f152e8c
 +
-+    const v2, 0x7f1428a1
++    const v2, 0x7f152e8b
 +
 +    goto :goto_1
 +
 +    :cond_5
-+    const v0, 0x7f1428a0
++    const v1, 0x7f152e8a
  
-     const v2, 0x7f14289d
+     const v2, 0x7f152e87
  
 +    :goto_1
 +    new-instance v4, Landroid/app/AlertDialog$Builder;
 +
-+    iget-object v5, p0, Lcom/samsung/android/settings/display/NewModePreview;->mContext:Landroid/content/Context;
++    iget-object v5, v0, Lcom/samsung/android/settings/display/NewModePreview;->mContext:Landroid/content/Context;
 +
 +    invoke-direct {v4, v5}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 +
@@ -843,18 +826,18 @@ index 492177e5d..7343072b1 100644
 +
 +    move-result-object v3
 +
-+    invoke-virtual {v3, v0}, Landroid/app/AlertDialog$Builder;->setTitle(I)Landroid/app/AlertDialog$Builder;
++    invoke-virtual {v3, v1}, Landroid/app/AlertDialog$Builder;->setTitle(I)Landroid/app/AlertDialog$Builder;
 +
-+    move-result-object v0
++    move-result-object v1
 +
-     invoke-virtual {v0, v2}, Landroid/app/AlertDialog$Builder;->setMessage(I)Landroid/app/AlertDialog$Builder;
+     invoke-virtual {v1, v2}, Landroid/app/AlertDialog$Builder;->setMessage(I)Landroid/app/AlertDialog$Builder;
  
-     move-result-object v0
-diff --git a/smali_classes4/com/samsung/android/settings/display/NewModePreview$6.smali b/smali_classes4/com/samsung/android/settings/display/NewModePreview$6.smali
-index 4ce11394e..f039f0706 100644
---- a/smali_classes4/com/samsung/android/settings/display/NewModePreview$6.smali
-+++ b/smali_classes4/com/samsung/android/settings/display/NewModePreview$6.smali
-@@ -24,7 +24,7 @@
+     move-result-object v1
+diff --git a/smali_classes3/com/samsung/android/settings/display/NewModePreview$6.smali b/smali_classes3/com/samsung/android/settings/display/NewModePreview$6.smali
+index 3080fd0d..e263d42c 100644
+--- a/smali_classes3/com/samsung/android/settings/display/NewModePreview$6.smali
++++ b/smali_classes3/com/samsung/android/settings/display/NewModePreview$6.smali
+@@ -12,7 +12,7 @@
  
  # virtual methods
  .method public final onClick(Landroid/content/DialogInterface;I)V
@@ -863,7 +846,7 @@ index 4ce11394e..f039f0706 100644
  
      iget-object p2, p0, Lcom/samsung/android/settings/display/NewModePreview$6;->this$0:Lcom/samsung/android/settings/display/NewModePreview;
  
-@@ -61,45 +61,68 @@
+@@ -49,45 +49,68 @@
  
      new-instance v0, Landroid/content/ComponentName;
  
@@ -909,8 +892,8 @@ index 4ce11394e..f039f0706 100644
 -    const-string v0, "BlueLightFilterService is not available"
 +    const-string v2, "BlueLightFilterService is not available"
  
--    invoke-static {p2, v0}, Landroid/util/secutil/Log;->w(Ljava/lang/String;Ljava/lang/String;)I
-+    invoke-static {v0, v2}, Landroid/util/secutil/Log;->w(Ljava/lang/String;Ljava/lang/String;)I
+-    invoke-static {p2, v0}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I
++    invoke-static {v0, v2}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I
  
 -    invoke-virtual {p0}, Ljava/lang/Exception;->printStackTrace()V
 +    invoke-virtual {p2}, Ljava/lang/Exception;->printStackTrace()V
@@ -946,11 +929,11 @@ index 4ce11394e..f039f0706 100644
      invoke-interface {p1}, Landroid/content/DialogInterface;->dismiss()V
  
      return-void
-diff --git a/smali_classes4/com/samsung/android/settings/display/NewModePreview.smali b/smali_classes4/com/samsung/android/settings/display/NewModePreview.smali
-index 681ea0717..61351e3b4 100644
---- a/smali_classes4/com/samsung/android/settings/display/NewModePreview.smali
-+++ b/smali_classes4/com/samsung/android/settings/display/NewModePreview.smali
-@@ -1696,6 +1696,22 @@
+diff --git a/smali_classes3/com/samsung/android/settings/display/NewModePreview.smali b/smali_classes3/com/samsung/android/settings/display/NewModePreview.smali
+index 239fab22..981613c2 100644
+--- a/smali_classes3/com/samsung/android/settings/display/NewModePreview.smali
++++ b/smali_classes3/com/samsung/android/settings/display/NewModePreview.smali
+@@ -1769,6 +1769,22 @@
  
      move-result-object v0
  
@@ -960,7 +943,7 @@ index 681ea0717..61351e3b4 100644
 +
 +    move-result-object v1
 +
-+    iget-object v2, p0, Lcom/samsung/android/settings/display/NewModePreview;->mEadObserver:Lcom/samsung/android/settings/display/NewModePreview$9;
++    iget-object v2, p0, Lcom/samsung/android/settings/display/NewModePreview;->mEadObserver:Lcom/samsung/android/settings/display/NewModePreview$8;
 +
 +    invoke-virtual {v0, v1, v3, v2}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V
 +
@@ -970,14 +953,14 @@ index 681ea0717..61351e3b4 100644
 +
 +    move-result-object v0
 +
-     const-string/jumbo v1, "sec_display_preset_index"
+     const-string v1, "sec_display_preset_index"
  
      invoke-static {v1}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-@@ -1749,6 +1765,16 @@
+@@ -1816,6 +1832,16 @@
  
      move-result-object v0
  
-+    iget-object v1, p0, Lcom/samsung/android/settings/display/NewModePreview;->mEadObserver:Lcom/samsung/android/settings/display/NewModePreview$9;
++    iget-object v1, p0, Lcom/samsung/android/settings/display/NewModePreview;->mEadObserver:Lcom/samsung/android/settings/display/NewModePreview$8;
 +
 +    invoke-virtual {v0, v1}, Landroid/content/ContentResolver;->unregisterContentObserver(Landroid/database/ContentObserver;)V
 +
@@ -987,10 +970,10 @@ index 681ea0717..61351e3b4 100644
 +
 +    move-result-object v0
 +
-     iget-object p0, p0, Lcom/samsung/android/settings/display/NewModePreview;->mSeekBarObserver:Lcom/samsung/android/settings/display/NewModePreview$9;
+     iget-object p0, p0, Lcom/samsung/android/settings/display/NewModePreview;->mSeekBarObserver:Lcom/samsung/android/settings/display/NewModePreview$8;
  
      invoke-virtual {v0, p0}, Landroid/content/ContentResolver;->unregisterContentObserver(Landroid/database/ContentObserver;)V
-@@ -1772,7 +1798,7 @@
+@@ -1839,7 +1865,7 @@
  .end method
  
  .method public final setEnabledExclusiveSettings()V
@@ -999,7 +982,7 @@ index 681ea0717..61351e3b4 100644
  
      invoke-virtual {p0}, Landroidx/fragment/app/Fragment;->getContext()Landroid/content/Context;
  
-@@ -1780,7 +1806,7 @@
+@@ -1847,7 +1873,7 @@
  
      if-nez v0, :cond_0
  
@@ -1008,7 +991,7 @@ index 681ea0717..61351e3b4 100644
  
      :cond_0
      iget-object v0, p0, Lcom/samsung/android/settings/display/NewModePreview;->mContext:Landroid/content/Context;
-@@ -1819,68 +1845,90 @@
+@@ -1886,69 +1912,91 @@
  
      sget-object v4, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
  
@@ -1074,7 +1057,7 @@ index 681ea0717..61351e3b4 100644
 +    invoke-virtual {v0, v1}, Landroid/widget/SeekBar;->setEnabled(Z)V
 +
 +    :cond_6
-     iget-object v0, p0, Lcom/samsung/android/settings/display/NewModePreview;->mAdvancedSettingButton:Lcom/samsung/android/settings/widget/SecRoundButtonView;
+     iget-object v0, p0, Lcom/samsung/android/settings/display/NewModePreview;->mAdvancedSettingButtonContainer:Landroid/widget/LinearLayout;
  
      const/16 v3, 0x8
  
@@ -1095,7 +1078,7 @@ index 681ea0717..61351e3b4 100644
  
 -    :goto_2
 +    :goto_3
-     invoke-virtual {v0, v4}, Landroid/widget/Button;->setVisibility(I)V
+     invoke-virtual {v0, v4}, Landroid/widget/LinearLayout;->setVisibility(I)V
  
 -    :cond_7
 +    :cond_8
@@ -1119,10 +1102,11 @@ index 681ea0717..61351e3b4 100644
 +    :goto_4
      return-void
  .end method
-diff --git a/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$21.smali b/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$21.smali
-index 951e231a7..fe186c94f 100644
---- a/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$21.smali
-+++ b/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$21.smali
+ 
+diff --git a/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$19.smali b/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$19.smali
+index 8d2d4333..4b79f1af 100644
+--- a/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$19.smali
++++ b/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings$19.smali
 @@ -5,7 +5,7 @@
  
  # virtual methods
@@ -1191,7 +1175,7 @@ index 951e231a7..fe186c94f 100644
 +    if-eqz v3, :cond_3
 +
 +    :cond_2
-     const-string/jumbo p1, "vividness_intensity"
+     const-string p1, "vividness_intensity"
  
      move-object v0, p0
 @@ -59,8 +81,7 @@
@@ -1204,11 +1188,20 @@ index 951e231a7..fe186c94f 100644
      return-object p0
  .end method
  
-diff --git a/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali b/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali
-index e485ea3c6..95a8d498b 100644
---- a/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali
-+++ b/smali_classes4/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali
-@@ -1850,6 +1850,16 @@
+diff --git a/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali b/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali
+index 3beb5c85..41fa2949 100644
+--- a/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali
++++ b/smali_classes3/com/samsung/android/settings/display/SecAdaptiveDisplaySettings.smali
+@@ -167,6 +167,8 @@
+ 
+     invoke-direct {v1, p0, v2, v3}, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings$3;-><init>(Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings;Landroid/os/Handler;I)V
+ 
++    iput-object v1, p0, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings;->mEadObserver:Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings$3;
++
+     new-instance v1, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings$3;
+ 
+     new-instance v2, Landroid/os/Handler;
+@@ -1728,6 +1730,16 @@
  
      sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
  
@@ -1225,7 +1218,18 @@ index e485ea3c6..95a8d498b 100644
      iget-boolean v0, p0, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings;->mIsSupportAdvancedWhiteBalance:Z
  
      if-eqz v0, :cond_1
-@@ -1949,6 +1959,22 @@
+@@ -1819,14 +1831,30 @@
+ 
+     move-result-object v1
+ 
+-    const/4 v2, 0x0
++    iget-object v2, p0, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings;->mBluelightFilterObserver:Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings$3;
+ 
+-    iget-object v3, p0, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings;->mBluelightFilterObserver:Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings$3;
++    const/4 v3, 0x0
+ 
+-    invoke-virtual {v0, v1, v2, v3}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V
++    invoke-virtual {v0, v1, v3, v2}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V
  
      sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
  
@@ -1248,57 +1252,95 @@ index e485ea3c6..95a8d498b 100644
      iget-boolean v0, p0, Lcom/samsung/android/settings/display/SecAdaptiveDisplaySettings;->mIsSupportAdvancedWhiteBalance:Z
  
      if-eqz v0, :cond_2
-diff --git a/smali_classes4/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali b/smali_classes4/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali
-index fa5ab2f1a..61fcfd22f 100644
---- a/smali_classes4/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali
-+++ b/smali_classes4/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali
-@@ -159,7 +159,7 @@
+diff --git a/smali_classes3/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali b/smali_classes3/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali
+index f4d12773..c7c4c8ef 100644
+--- a/smali_classes3/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali
++++ b/smali_classes3/com/samsung/android/settings/display/controller/SecEADPreferenceController.smali
+@@ -190,11 +190,24 @@
+ .end method
  
-     sget-object p0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
+ .method public getAvailabilityStatus()I
+-    .locals 0
++    .locals 1
+ 
+-    sget-object p0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
++    sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
++
++    iget-object p0, p0, Lcom/android/settingslib/core/AbstractPreferenceController;->mContext:Landroid/content/Context;
++
++    invoke-static {p0}, Lcom/samsung/android/settings/display/SecDisplayUtils;->isDesktopWindowingAndNonDefaultDisplay(Landroid/content/Context;)Z
++
++    move-result p0
  
 -    const/4 p0, 0x3
++    if-eqz p0, :cond_0
++
++    const/4 p0, 0x5
++
++    return p0
++
++    :cond_0
 +    const/4 p0, 0x0
  
      return p0
  .end method
-diff --git a/smali_classes4/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali b/smali_classes4/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali
-index 5fc0376b4..4ddcae736 100644
---- a/smali_classes4/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali
-+++ b/smali_classes4/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali
-@@ -679,7 +679,7 @@
-     :goto_1
-     packed-switch v12, :pswitch_data_0
+diff --git a/smali_classes3/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali b/smali_classes3/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali
+index 7f484ede..4763a5a0 100644
+--- a/smali_classes3/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali
++++ b/smali_classes3/com/samsung/android/settings/eternal/provider/items/DisplayItem.smali
+@@ -986,7 +986,7 @@
  
--    goto/16 :goto_1d
-+    goto/16 :goto_1e
+     packed-switch v5, :pswitch_data_0
+ 
+-    goto/16 :goto_26
++    goto/16 :goto_27
  
      :pswitch_0
      invoke-static {}, Lcom/samsung/android/settings/Rune;->supportNavigationBar()Z
-@@ -830,7 +830,7 @@
+@@ -1149,7 +1149,7 @@
  
-     move-result v1
+     move-result v2
  
--    if-eqz v1, :cond_49
-+    if-eqz v1, :cond_4a
+-    if-eqz v2, :cond_6b
++    if-eqz v2, :cond_6c
  
-     invoke-static {v0, v5}, Lcom/samsung/android/settings/display/SecDisplayUtils;->getHighRefreshRateDefaultValue(Landroid/content/Context;I)I
+     invoke-static {v0, v1}, Lcom/samsung/android/settings/display/SecDisplayUtils;->getHighRefreshRateDefaultValue(Landroid/content/Context;I)I
  
-@@ -1123,7 +1123,7 @@
+@@ -1503,7 +1503,7 @@
  
-     invoke-virtual {v6, v1, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
+     invoke-virtual {v3, v1, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
  
--    goto/16 :goto_1d
-+    goto/16 :goto_1e
+-    goto/16 :goto_26
++    goto/16 :goto_27
  
-     :pswitch_9
-     invoke-static {}, Lcom/samsung/android/settings/Rune;->supportNavigationBar()Z
-@@ -1224,6 +1224,28 @@
      :pswitch_b
+     sget-object v1, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
+@@ -1808,14 +1808,14 @@
+ 
+     invoke-virtual {v3, v0, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    goto/16 :goto_26
++    goto/16 :goto_27
+ 
+     :cond_45
+     const-string v0, "Nothing needs to be checked"
+ 
+     invoke-static {v12, v0}, Lcom/samsung/android/util/SemLog;->d(Ljava/lang/String;Ljava/lang/String;)I
+ 
+-    goto/16 :goto_26
++    goto/16 :goto_27
+ 
+     :cond_46
+     invoke-virtual {v11, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -2017,6 +2017,32 @@
+     :pswitch_11
      sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
  
 +    const-string v0, "ead_enabled"
 +
-+    invoke-static {v7, v0, v5}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
++    const/4 v1, 0x0
++
++    invoke-static {v4, v0, v1}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
 +
 +    move-result v0
 +
@@ -1306,654 +1348,838 @@ index 5fc0376b4..4ddcae736 100644
 +
 +    move-result-object v1
 +
-+    invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
++    invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
 +
-+    if-nez v0, :cond_35
++    if-nez v0, :cond_4e
 +
-+    goto :goto_11
++    const/4 v11, 0x1
 +
-+    :cond_35
-+    move v14, v5
-+
-+    :goto_11
-+    invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
-+
-     return-object v6
- 
-     :pswitch_c
-@@ -1241,14 +1263,14 @@
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-nez v0, :cond_35
-+    if-nez v0, :cond_36
- 
--    goto :goto_11
-+    goto :goto_12
- 
--    :cond_35
-+    :cond_36
-     move v14, v5
- 
--    :goto_11
-+    :goto_12
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
-@@ -1332,32 +1354,32 @@
- 
-     invoke-virtual {v6, v7, v3}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    if-nez v0, :cond_36
-+    if-nez v0, :cond_37
- 
--    if-nez v1, :cond_36
-+    if-nez v1, :cond_37
- 
--    if-ne v14, v2, :cond_36
-+    if-ne v14, v2, :cond_37
- 
--    if-ne v14, v4, :cond_36
-+    if-ne v14, v4, :cond_37
- 
-     const-wide/16 v19, 0x474
- 
-     cmp-long v0, v19, v15
- 
--    if-nez v0, :cond_36
-+    if-nez v0, :cond_37
- 
-     const-wide/16 v17, 0x1a4
- 
-     cmp-long v0, v17, v21
- 
--    if-nez v0, :cond_36
-+    if-nez v0, :cond_37
- 
--    goto :goto_12
-+    goto :goto_13
- 
--    :cond_36
-+    :cond_37
-     move v14, v5
- 
--    :goto_12
-+    :goto_13
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
-@@ -1367,7 +1389,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_38
-+    if-eqz v0, :cond_39
- 
-     invoke-static {}, Lcom/samsung/android/settings/navigationbar/NavigationBarSettingsUtil;->isGestureDefault()Z
- 
-@@ -1441,27 +1463,27 @@
- 
-     invoke-virtual {v6, v8, v9}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    if-ne v0, v1, :cond_37
-+    if-ne v0, v1, :cond_38
- 
--    if-ne v14, v2, :cond_37
-+    if-ne v14, v2, :cond_38
- 
--    if-ne v14, v3, :cond_37
-+    if-ne v14, v3, :cond_38
- 
--    if-ne v14, v4, :cond_37
-+    if-ne v14, v4, :cond_38
- 
--    if-ne v14, v7, :cond_37
-+    if-ne v14, v7, :cond_38
- 
--    goto :goto_13
-+    goto :goto_14
- 
--    :cond_37
-+    :cond_38
-     move v14, v5
- 
--    :goto_13
-+    :goto_14
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
- 
--    :cond_38
-+    :cond_39
-     invoke-virtual {v2, v4}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
- 
-     move-result-object v0
-@@ -1499,14 +1521,14 @@
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-ne v0, v14, :cond_39
-+    if-ne v0, v14, :cond_3a
- 
--    goto :goto_14
-+    goto :goto_15
- 
--    :cond_39
-+    :cond_3a
-     move v14, v5
- 
--    :goto_14
-+    :goto_15
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
-@@ -1525,13 +1547,13 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_3b
-+    if-eqz v0, :cond_3c
- 
-     invoke-static {}, Lcom/samsung/android/settings/Rune;->supportNavigationBarForHardKey()Z
- 
-     move-result v0
- 
--    if-nez v0, :cond_3b
-+    if-nez v0, :cond_3c
- 
-     const-string v0, "navigationbar_key_order"
- 
-@@ -1545,19 +1567,19 @@
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-nez v0, :cond_3a
-+    if-nez v0, :cond_3b
- 
--    goto :goto_15
-+    goto :goto_16
- 
--    :cond_3a
-+    :cond_3b
-     move v14, v5
- 
--    :goto_15
-+    :goto_16
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
- 
--    :cond_3b
-+    :cond_3c
-     invoke-virtual {v2, v4}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
- 
-     move-result-object v0
-@@ -1613,7 +1635,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_3c
-+    if-eqz v0, :cond_3d
- 
-     const-string v0, "blue_light_filter_adaptive_mode"
- 
-@@ -1629,7 +1651,7 @@
- 
-     invoke-virtual {v6, v0, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    :cond_3c
-+    :cond_3d
-     const-string v0, "blue_light_filter_type"
- 
-     invoke-static {v7, v0, v5}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
-@@ -1638,7 +1660,7 @@
- 
-     const-string/jumbo v2, "turnOnAsAlwaysOn"
- 
--    if-nez v1, :cond_3d
-+    if-nez v1, :cond_3e
- 
-     const/4 v4, 0x2
- 
-@@ -1654,9 +1676,9 @@
- 
-     invoke-virtual {v6, v0, v2}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    goto :goto_16
 +    goto :goto_17
- 
--    :cond_3d
-+    :cond_3e
-     const/4 v4, 0x2
- 
-     invoke-static {v7, v0, v4}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
-@@ -1675,7 +1697,7 @@
- 
-     invoke-virtual {v6, v0, v2}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    :goto_16
-+    :goto_17
-     const-string v0, "blue_light_filter_on_time"
- 
-     const-wide/16 v12, 0x474
-@@ -1714,7 +1736,7 @@
- 
-     move-result v0
- 
--    if-lez v0, :cond_49
-+    if-lez v0, :cond_4a
- 
-     const-string v0, "blue_light_filter_night_dim"
- 
-@@ -1754,7 +1776,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_40
-+    if-eqz v0, :cond_41
- 
-     const-string v0, "navigationbar_switch_apps_when_hint_hidden"
- 
-@@ -1762,35 +1784,35 @@
- 
-     move-result v0
- 
--    if-ne v0, v14, :cond_3e
-+    if-ne v0, v14, :cond_3f
- 
-     move v1, v14
- 
--    goto :goto_17
-+    goto :goto_18
- 
--    :cond_3e
-+    :cond_3f
-     move v1, v5
- 
--    :goto_17
-+    :goto_18
-     invoke-static {v1}, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;
- 
-     move-result-object v1
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-nez v0, :cond_3f
-+    if-nez v0, :cond_40
- 
--    goto :goto_18
-+    goto :goto_19
- 
--    :cond_3f
-+    :cond_40
-     move v14, v5
- 
--    :goto_18
-+    :goto_19
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
- 
--    :cond_40
-+    :cond_41
-     const-string v0, "Device not support NavigationSwitchAppsWhenHintHidden - "
- 
-     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -1846,19 +1868,19 @@
- 
-     move-result v3
- 
--    if-eqz v3, :cond_41
-+    if-eqz v3, :cond_42
- 
--    if-ne v2, v14, :cond_41
-+    if-ne v2, v14, :cond_42
- 
--    if-ne v1, v14, :cond_41
-+    if-ne v1, v14, :cond_42
- 
--    goto :goto_19
-+    goto :goto_1a
- 
--    :cond_41
-+    :cond_42
-     move v14, v5
- 
--    :goto_19
--    if-nez v2, :cond_42
-+    :goto_1a
-+    if-nez v2, :cond_43
- 
-     const-string/jumbo v1, "screen_brightness"
- 
-@@ -1876,7 +1898,7 @@
- 
-     sget-boolean v1, Lcom/samsung/android/settings/Rune;->SUPPORT_EXTRA_BRIGHT:Z
- 
--    if-eqz v1, :cond_42
-+    if-eqz v1, :cond_43
- 
-     invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
- 
-@@ -1912,7 +1934,7 @@
- 
-     invoke-virtual {v6, v0, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    :cond_42
-+    :cond_43
-     invoke-static {v2}, Ljava/lang/String;->valueOf(I)Ljava/lang/String;
- 
-     move-result-object v0
-@@ -1928,19 +1950,19 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_44
-+    if-eqz v0, :cond_45
- 
-     invoke-static {}, Lcom/android/settings/Utils;->isTablet()Z
- 
-     move-result v0
- 
--    if-eqz v0, :cond_44
-+    if-eqz v0, :cond_45
- 
-     invoke-static {}, Lcom/samsung/android/settings/Rune;->supportNavigationBarForHardKey()Z
- 
-     move-result v0
- 
--    if-nez v0, :cond_44
-+    if-nez v0, :cond_45
- 
-     const-string v0, "navigationbar_key_position"
- 
-@@ -1956,19 +1978,19 @@
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-ne v4, v0, :cond_43
-+    if-ne v4, v0, :cond_44
- 
--    goto :goto_1a
-+    goto :goto_1b
- 
--    :cond_43
-+    :cond_44
-     move v14, v5
- 
--    :goto_1a
-+    :goto_1b
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
- 
--    :cond_44
-+    :cond_45
-     const-string v0, "Device not support NavigationButtonPosition - "
- 
-     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -1990,7 +2012,7 @@
- 
-     move-result v1
- 
--    if-eqz v1, :cond_46
-+    if-eqz v1, :cond_47
- 
-     invoke-virtual {v0}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
- 
-@@ -2012,17 +2034,17 @@
- 
-     invoke-virtual {v6, v2, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-ne v1, v0, :cond_45
-+    if-ne v1, v0, :cond_46
- 
--    goto :goto_1b
-+    goto :goto_1c
- 
--    :cond_45
-+    :cond_46
-     move v14, v5
- 
--    :goto_1b
-+    :goto_1c
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
--    if-eqz v0, :cond_49
-+    if-eqz v0, :cond_4a
- 
-     const-string/jumbo v0, "screensaver_components"
- 
-@@ -2036,7 +2058,7 @@
- 
-     return-object v6
- 
--    :cond_46
-+    :cond_47
-     const-string v0, "Device not support ScreenSaver - "
- 
-     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -2052,7 +2074,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_48
-+    if-eqz v0, :cond_49
- 
-     const-string/jumbo v0, "taskbar_style_type"
- 
-@@ -2066,19 +2088,19 @@
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-nez v0, :cond_47
-+    if-nez v0, :cond_48
- 
--    goto :goto_1c
-+    goto :goto_1d
- 
--    :cond_47
-+    :cond_48
-     move v14, v5
- 
--    :goto_1c
-+    :goto_1d
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
- 
--    :cond_48
-+    :cond_49
-     invoke-virtual {v11, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
- 
-     move-result-object v0
-@@ -2092,7 +2114,7 @@
- 
-     move-result-object v0
- 
--    if-eqz v0, :cond_49
-+    if-eqz v0, :cond_4a
- 
-     aget v1, v0, v14
- 
-@@ -2119,7 +2141,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_4a
-+    if-eqz v0, :cond_4b
- 
-     const-string/jumbo v0, "screen_mode_setting"
- 
-@@ -2211,7 +2233,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_49
-+    if-eqz v0, :cond_4a
- 
-     const-string/jumbo v0, "vividness_intensity"
- 
-@@ -2227,11 +2249,11 @@
- 
-     invoke-virtual {v6, v0, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/Object;Ljava/lang/String;)V
- 
--    :cond_49
--    :goto_1d
-+    :cond_4a
-+    :goto_1e
-     return-object v6
- 
--    :cond_4a
-+    :cond_4b
-     const-string v0, "Device not support ScreenMode - "
- 
-     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -2247,7 +2269,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_4c
-+    if-eqz v0, :cond_4d
- 
-     const-string v0, "navigation_bar_button_to_hide_keyboard"
- 
-@@ -2261,19 +2283,19 @@
- 
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
- 
--    if-ne v14, v0, :cond_4b
-+    if-ne v14, v0, :cond_4c
- 
--    goto :goto_1e
-+    goto :goto_1f
- 
--    :cond_4b
-+    :cond_4c
-     move v14, v5
- 
--    :goto_1e
-+    :goto_1f
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
- 
-     return-object v6
- 
--    :cond_4c
-+    :cond_4d
-     const-string v0, "Device not support NAVIGATION_SHOW_BUTTON_TO_HIDE_KEYBOARD - "
- 
-     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -2289,7 +2311,7 @@
- 
-     move-result v0
- 
--    if-eqz v0, :cond_4d
-+    if-eqz v0, :cond_4e
- 
-     const-string v0, "easy_mode_switch"
- 
-@@ -2307,7 +2329,7 @@
- 
-     return-object v6
- 
--    :cond_4d
++
 +    :cond_4e
-     const-string v0, "Device not support EasyModeSwitch - "
++    const/4 v11, 0x0
++
++    :goto_17
++    invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
++
+     return-object v3
  
-     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -2323,7 +2345,7 @@
+     :pswitch_12
+@@ -2024,7 +2050,7 @@
  
      move-result v0
  
 -    if-eqz v0, :cond_4f
 +    if-eqz v0, :cond_50
  
-     const-string v0, "navigation_bar_gesture_hint"
+     const-string v0, "taskbar_position"
  
-@@ -2337,19 +2359,19 @@
+@@ -2040,21 +2066,21 @@
  
-     invoke-virtual {v6, v1, v5}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;Z)V
+     invoke-virtual {v3, v2}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
  
--    if-ne v14, v0, :cond_4e
-+    if-ne v14, v0, :cond_4f
+-    if-ne v1, v0, :cond_4e
++    if-ne v1, v0, :cond_4f
  
--    goto :goto_1f
-+    goto :goto_20
+     const/4 v11, 0x1
+ 
+-    goto :goto_17
++    goto :goto_18
  
 -    :cond_4e
 +    :cond_4f
-     move v14, v5
+     const/4 v11, 0x0
  
--    :goto_1f
-+    :goto_20
-     invoke-virtual {v6, v14}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)V
+-    :goto_17
++    :goto_18
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
  
-     return-object v6
+     return-object v3
  
 -    :cond_4f
 +    :cond_50
-     invoke-virtual {v2, v4}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+     invoke-virtual {v13, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
  
      move-result-object v0
-@@ -2363,7 +2385,7 @@
+@@ -2076,7 +2102,7 @@
  
-     move-result v0
+     move-result v1
  
--    if-eqz v0, :cond_50
-+    if-eqz v0, :cond_51
+-    if-eqz v1, :cond_50
++    if-eqz v1, :cond_51
  
-     const-string/jumbo v0, "task_bar"
+     invoke-static {v0}, Lcom/samsung/android/settings/bpd/utils/PdUtils;->isPdMainEnabled(Landroid/content/Context;)Z
  
-@@ -2381,7 +2403,7 @@
+@@ -2096,7 +2122,7 @@
  
-     return-object v6
+     return-object v3
  
 -    :cond_50
 +    :cond_51
      invoke-virtual {v11, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
  
      move-result-object v0
-@@ -2408,7 +2430,7 @@
+@@ -2118,7 +2144,7 @@
  
-     move-result v0
+     move-result v1
  
--    if-ltz v0, :cond_51
-+    if-ltz v0, :cond_52
+-    if-eqz v1, :cond_51
++    if-eqz v1, :cond_52
  
-     invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+     invoke-static {v0}, Lcom/samsung/android/settings/bpd/utils/PdUtils;->isPdCustomPPPEnabled(Landroid/content/Context;)Z
  
-@@ -2418,7 +2440,7 @@
+@@ -2138,7 +2164,7 @@
  
-     return-object v6
+     return-object v3
  
 -    :cond_51
 +    :cond_52
+     invoke-virtual {v11, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -2160,7 +2186,7 @@
+ 
+     move-result v1
+ 
+-    if-eqz v1, :cond_52
++    if-eqz v1, :cond_53
+ 
+     invoke-static {v0}, Lcom/samsung/android/settings/bpd/utils/PdUtils;->isPdExtraDimEnabled(Landroid/content/Context;)Z
+ 
+@@ -2180,7 +2206,7 @@
+ 
+     return-object v3
+ 
+-    :cond_52
++    :cond_53
+     invoke-virtual {v11, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -2202,7 +2228,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_54
++    if-eqz v0, :cond_55
+ 
+     const-string v0, "auto_adjust_touch"
+ 
+@@ -2218,21 +2244,21 @@
+ 
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-nez v0, :cond_53
++    if-nez v0, :cond_54
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_18
++    goto :goto_19
+ 
+-    :cond_53
++    :cond_54
+     const/4 v11, 0x0
+ 
+-    :goto_18
++    :goto_19
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_54
++    :cond_55
+     const-string v0, "Device not support TouchSensitivity - "
+ 
+     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -2248,7 +2274,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_56
++    if-eqz v0, :cond_57
+ 
+     const-string v0, "home_recent_apps_enabled"
+ 
+@@ -2264,21 +2290,21 @@
+ 
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-nez v0, :cond_55
++    if-nez v0, :cond_56
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_19
++    goto :goto_1a
+ 
+-    :cond_55
++    :cond_56
+     const/4 v11, 0x0
+ 
+-    :goto_19
++    :goto_1a
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_56
++    :cond_57
+     invoke-virtual {v13, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -2370,36 +2396,36 @@
+ 
+     invoke-virtual {v3, v6, v7}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-nez v0, :cond_57
++    if-nez v0, :cond_58
+ 
+-    if-nez v2, :cond_57
++    if-nez v2, :cond_58
+ 
+     const/4 v2, 0x1
+ 
+-    if-ne v2, v1, :cond_57
++    if-ne v2, v1, :cond_58
+ 
+-    if-ne v2, v8, :cond_57
++    if-ne v2, v8, :cond_58
+ 
+     const-wide/16 v21, 0x474
+ 
+     cmp-long v0, v21, v12
+ 
+-    if-nez v0, :cond_57
++    if-nez v0, :cond_58
+ 
+     const-wide/16 v18, 0x1a4
+ 
+     cmp-long v0, v18, v4
+ 
+-    if-nez v0, :cond_57
++    if-nez v0, :cond_58
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_1a
++    goto :goto_1b
+ 
+-    :cond_57
++    :cond_58
+     const/4 v11, 0x0
+ 
+-    :goto_1a
++    :goto_1b
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+@@ -2409,7 +2435,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_59
++    if-eqz v0, :cond_5a
+ 
+     invoke-static {}, Lcom/samsung/android/settings/navigationbar/NavigationBarSettingsUtil;->isGestureDefault()Z
+ 
+@@ -2483,31 +2509,31 @@
+ 
+     invoke-virtual {v3, v5, v7}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-ne v0, v1, :cond_58
++    if-ne v0, v1, :cond_59
+ 
+     const/4 v1, 0x1
+ 
+-    if-ne v1, v2, :cond_58
++    if-ne v1, v2, :cond_59
+ 
+-    if-ne v1, v6, :cond_58
++    if-ne v1, v6, :cond_59
+ 
+-    if-ne v1, v6, :cond_58
++    if-ne v1, v6, :cond_59
+ 
+-    if-ne v1, v4, :cond_58
++    if-ne v1, v4, :cond_59
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_1b
++    goto :goto_1c
+ 
+-    :cond_58
++    :cond_59
+     const/4 v11, 0x0
+ 
+-    :goto_1b
++    :goto_1c
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_59
++    :cond_5a
+     invoke-virtual {v2, v8}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -2549,16 +2575,16 @@
+ 
+     move-result-object v1
+ 
+-    if-ne v0, v5, :cond_5a
++    if-ne v0, v5, :cond_5b
+ 
+     move v11, v5
+ 
+-    goto :goto_1c
++    goto :goto_1d
+ 
+-    :cond_5a
++    :cond_5b
+     const/4 v11, 0x0
+ 
+-    :goto_1c
++    :goto_1d
+     invoke-virtual {v1, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+@@ -2579,13 +2605,13 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_5c
++    if-eqz v0, :cond_5d
+ 
+     invoke-static {}, Lcom/samsung/android/settings/Rune;->supportNavigationBarForHardKey()Z
+ 
+     move-result v0
+ 
+-    if-nez v0, :cond_5c
++    if-nez v0, :cond_5d
+ 
+     const-string v0, "navigationbar_key_order"
+ 
+@@ -2601,21 +2627,21 @@
+ 
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-nez v0, :cond_5b
++    if-nez v0, :cond_5c
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_1d
++    goto :goto_1e
+ 
+-    :cond_5b
++    :cond_5c
+     const/4 v11, 0x0
+ 
+-    :goto_1d
++    :goto_1e
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_5c
++    :cond_5d
+     invoke-virtual {v2, v8}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -2673,7 +2699,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_5d
++    if-eqz v0, :cond_5e
+ 
+     const-string v0, "blue_light_filter_adaptive_mode"
+ 
+@@ -2691,7 +2717,7 @@
+ 
+     invoke-virtual {v3, v1, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    :cond_5d
++    :cond_5e
+     const-string v0, "blue_light_filter_type"
+ 
+     const/4 v1, 0x0
+@@ -2702,7 +2728,7 @@
+ 
+     const-string v5, "turnOnAsAlwaysOn"
+ 
+-    if-nez v2, :cond_5e
++    if-nez v2, :cond_5f
+ 
+     invoke-static/range {v20 .. v20}, Ljava/lang/String;->valueOf(I)Ljava/lang/String;
+ 
+@@ -2718,9 +2744,9 @@
+ 
+     invoke-virtual {v3, v5, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    goto :goto_1e
++    goto :goto_1f
+ 
+-    :cond_5e
++    :cond_5f
+     move/from16 v2, v20
+ 
+     invoke-static {v4, v0, v2}, Landroid/provider/Settings$System;->getInt(Landroid/content/ContentResolver;Ljava/lang/String;I)I
+@@ -2739,7 +2765,7 @@
+ 
+     invoke-virtual {v3, v5, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    :goto_1e
++    :goto_1f
+     const-string v0, "blue_light_filter_on_time"
+ 
+     const-wide/16 v10, 0x474
+@@ -2778,7 +2804,7 @@
+ 
+     move-result v0
+ 
+-    if-lez v0, :cond_5f
++    if-lez v0, :cond_60
+ 
+     const-string v0, "blue_light_filter_night_dim"
+ 
+@@ -2796,12 +2822,12 @@
+ 
+     invoke-virtual {v3, v2, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    goto :goto_1f
++    goto :goto_20
+ 
+-    :cond_5f
++    :cond_60
+     const/4 v1, 0x0
+ 
+-    :goto_1f
++    :goto_20
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+@@ -2830,7 +2856,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_62
++    if-eqz v0, :cond_63
+ 
+     const-string v0, "navigationbar_switch_apps_when_hint_hidden"
+ 
+@@ -2840,37 +2866,37 @@
+ 
+     const/4 v1, 0x1
+ 
+-    if-ne v0, v1, :cond_60
++    if-ne v0, v1, :cond_61
+ 
+     const/4 v1, 0x1
+ 
+-    goto :goto_20
++    goto :goto_21
+ 
+-    :cond_60
++    :cond_61
+     const/4 v1, 0x0
+ 
+-    :goto_20
++    :goto_21
+     invoke-static {v1}, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;
+ 
+     move-result-object v1
+ 
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-nez v0, :cond_61
++    if-nez v0, :cond_62
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_21
++    goto :goto_22
+ 
+-    :cond_61
++    :cond_62
+     const/4 v11, 0x0
+ 
+-    :goto_21
++    :goto_22
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_62
++    :cond_63
+     const-string v0, "Device not support NavigationSwitchAppsWhenHintHidden - "
+ 
+     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -2938,23 +2964,23 @@
+ 
+     move-result v1
+ 
+-    if-eqz v1, :cond_63
++    if-eqz v1, :cond_64
+ 
+     const/4 v1, 0x1
+ 
+-    if-ne v4, v1, :cond_63
++    if-ne v4, v1, :cond_64
+ 
+-    if-ne v2, v1, :cond_63
++    if-ne v2, v1, :cond_64
+ 
+     const/4 v12, 0x1
+ 
+-    goto :goto_22
++    goto :goto_23
+ 
+-    :cond_63
++    :cond_64
+     const/4 v12, 0x0
+ 
+-    :goto_22
+-    if-nez v4, :cond_64
++    :goto_23
++    if-nez v4, :cond_65
+ 
+     const-class v1, Landroid/hardware/display/DisplayManager;
+ 
+@@ -2990,7 +3016,7 @@
+ 
+     sget-boolean v1, Lcom/samsung/android/settings/Rune;->SUPPORT_EXTRA_BRIGHT:Z
+ 
+-    if-eqz v1, :cond_64
++    if-eqz v1, :cond_65
+ 
+     invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
+ 
+@@ -3028,7 +3054,7 @@
+ 
+     invoke-virtual {v3, v1, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    :cond_64
++    :cond_65
+     invoke-static {v4}, Ljava/lang/String;->valueOf(I)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -3044,19 +3070,19 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_66
++    if-eqz v0, :cond_67
+ 
+     invoke-static {}, Lcom/android/settings/Utils;->isTablet()Z
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_66
++    if-eqz v0, :cond_67
+ 
+     invoke-static {}, Lcom/samsung/android/settings/Rune;->supportNavigationBarForHardKey()Z
+ 
+     move-result v0
+ 
+-    if-nez v0, :cond_66
++    if-nez v0, :cond_67
+ 
+     const-string v0, "navigationbar_key_position"
+ 
+@@ -3072,21 +3098,21 @@
+ 
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-ne v2, v0, :cond_65
++    if-ne v2, v0, :cond_66
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_23
++    goto :goto_24
+ 
+-    :cond_65
++    :cond_66
+     const/4 v11, 0x0
+ 
+-    :goto_23
++    :goto_24
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_66
++    :cond_67
+     const-string v0, "Device not support NavigationButtonPosition - "
+ 
+     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -3108,7 +3134,7 @@
+ 
+     move-result v1
+ 
+-    if-eqz v1, :cond_68
++    if-eqz v1, :cond_69
+ 
+     invoke-virtual {v0}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
+ 
+@@ -3130,19 +3156,19 @@
+ 
+     invoke-virtual {v3, v2}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-ne v1, v0, :cond_67
++    if-ne v1, v0, :cond_68
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_24
++    goto :goto_25
+ 
+-    :cond_67
++    :cond_68
+     const/4 v11, 0x0
+ 
+-    :goto_24
++    :goto_25
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-eqz v0, :cond_6b
++    if-eqz v0, :cond_6c
+ 
+     const-string v0, "screensaver_components"
+ 
+@@ -3156,7 +3182,7 @@
+ 
+     return-object v3
+ 
+-    :cond_68
++    :cond_69
+     const-string v0, "Device not support ScreenSaver - "
+ 
+     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -3172,7 +3198,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_6a
++    if-eqz v0, :cond_6b
+ 
+     const-string v0, "taskbar_style_type"
+ 
+@@ -3188,21 +3214,21 @@
+ 
+     invoke-virtual {v3, v1}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-nez v0, :cond_69
++    if-nez v0, :cond_6a
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_25
++    goto :goto_26
+ 
+-    :cond_69
++    :cond_6a
+     const/4 v11, 0x0
+ 
+-    :goto_25
++    :goto_26
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_6a
++    :cond_6b
+     invoke-virtual {v13, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -3216,7 +3242,7 @@
+ 
+     move-result-object v0
+ 
+-    if-eqz v0, :cond_6b
++    if-eqz v0, :cond_6c
+ 
+     const/16 v24, 0x1
+ 
+@@ -3245,7 +3271,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_6c
++    if-eqz v0, :cond_6d
+ 
+     const-string v0, "screen_mode_setting"
+ 
+@@ -3341,7 +3367,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_6b
++    if-eqz v0, :cond_6c
+ 
+     const-string v0, "vividness_intensity"
+ 
+@@ -3357,11 +3383,11 @@
+ 
+     invoke-virtual {v3, v1, v0}, Lcom/samsung/android/lib/episode/Scene$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    :cond_6b
+-    :goto_26
++    :cond_6c
++    :goto_27
+     return-object v3
+ 
+-    :cond_6c
++    :cond_6d
+     const-string v0, "Device not support ScreenMode - "
+ 
+     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -3377,7 +3403,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_6e
++    if-eqz v0, :cond_6f
+ 
+     const-string v0, "navigation_bar_button_to_hide_keyboard"
+ 
+@@ -3393,21 +3419,21 @@
+ 
+     invoke-virtual {v3, v2}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-ne v1, v0, :cond_6d
++    if-ne v1, v0, :cond_6e
+ 
+     const/4 v11, 0x1
+ 
+-    goto :goto_27
++    goto :goto_28
+ 
+-    :cond_6d
++    :cond_6e
+     const/4 v11, 0x0
+ 
+-    :goto_27
++    :goto_28
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_6e
++    :cond_6f
+     const-string v0, "Device not support NAVIGATION_SHOW_BUTTON_TO_HIDE_KEYBOARD - "
+ 
+     invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+@@ -3423,7 +3449,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_6f
++    if-eqz v0, :cond_70
+ 
+     const-string v0, "easy_mode_switch"
+ 
+@@ -3445,7 +3471,7 @@
+ 
+     return-object v3
+ 
+-    :cond_6f
++    :cond_70
+     invoke-virtual {v10, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -3461,7 +3487,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_71
++    if-eqz v0, :cond_72
+ 
+     const-string v0, "navigation_bar_gesture_hint"
+ 
+@@ -3475,21 +3501,21 @@
+ 
+     invoke-virtual {v3, v2}, Lcom/samsung/android/lib/episode/Scene$Builder;->setValue(Ljava/lang/Object;)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+-    if-ne v1, v0, :cond_70
++    if-ne v1, v0, :cond_71
+ 
+     move v11, v1
+ 
+-    goto :goto_28
++    goto :goto_29
+ 
+-    :cond_70
++    :cond_71
+     const/4 v11, 0x0
+ 
+-    :goto_28
++    :goto_29
+     invoke-virtual {v3, v11}, Lcom/samsung/android/lib/episode/Scene$Builder;->setDefault(Z)Lcom/samsung/android/lib/episode/Scene$Builder;
+ 
+     return-object v3
+ 
+-    :cond_71
++    :cond_72
+     invoke-virtual {v2, v8}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -3505,7 +3531,7 @@
+ 
+     move-result v0
+ 
+-    if-eqz v0, :cond_72
++    if-eqz v0, :cond_73
+ 
+     const-string v0, "task_bar"
+ 
+@@ -3525,7 +3551,7 @@
+ 
+     return-object v3
+ 
+-    :cond_72
++    :cond_73
+     invoke-virtual {v13, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+ 
+     move-result-object v0
+@@ -3552,7 +3578,7 @@
+ 
+     move-result v0
+ 
+-    if-ltz v0, :cond_73
++    if-ltz v0, :cond_74
+ 
+     invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+ 
+@@ -3562,7 +3588,7 @@
+ 
+     return-object v3
+ 
+-    :cond_73
++    :cond_74
      const-string v0, "Device not support ChargingInformation - "
  
      invoke-virtual {v0, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-@@ -3894,11 +3916,9 @@
-     :pswitch_b
+@@ -5676,15 +5702,9 @@
+     :pswitch_11
      sget-object v0, Lcom/samsung/android/settings/Rune;->COMMON_CONFIG_PACKAGE_NAME_SMART_MANAGER:Ljava/lang/String;
  
--    iput-object v11, v10, Lcom/samsung/android/lib/episode/SceneResult$Builder;->mResultType:Lcom/samsung/android/lib/episode/SceneResult$ResultType;
+-    sget-object v0, Lcom/samsung/android/lib/episode/SceneResult$ResultType;->RESULT_FAIL:Lcom/samsung/android/lib/episode/SceneResult$ResultType;
 -
--    sget-object v0, Lcom/samsung/android/lib/episode/SceneResult$ErrorType;->NOT_SUPPORTED:Lcom/samsung/android/lib/episode/SceneResult$ErrorType;
+-    invoke-virtual {v8, v0}, Lcom/samsung/android/lib/episode/SceneResult$Builder;->setResult(Lcom/samsung/android/lib/episode/SceneResult$ResultType;)Lcom/samsung/android/lib/episode/SceneResult$Builder;
 +    const-string v0, "ead_enabled"
  
--    iput-object v0, v10, Lcom/samsung/android/lib/episode/SceneResult$Builder;->mErrorType:Lcom/samsung/android/lib/episode/SceneResult$ErrorType;
-+    invoke-static {v13, v14, v0}, Lcom/samsung/android/settings/asbase/vibration/SecSoundDeviceVibrationController$$ExternalSyntheticOutline0;->m(Landroid/content/ContentResolver;Ljava/lang/String;Ljava/lang/String;)V
- 
-     goto/16 :goto_2d
- 
-@@ -6297,8 +6317,6 @@
- 
-     return-object v0
- 
--    nop
+-    move-result-object v0
 -
-     :sswitch_data_0
-     .sparse-switch
-         -0x7fd88b6c -> :sswitch_22
+-    sget-object v1, Lcom/samsung/android/lib/episode/SceneResult$ErrorType;->NOT_SUPPORTED:Lcom/samsung/android/lib/episode/SceneResult$ErrorType;
+-
+-    invoke-virtual {v0, v1}, Lcom/samsung/android/lib/episode/SceneResult$Builder;->setErrorType(Lcom/samsung/android/lib/episode/SceneResult$ErrorType;)Lcom/samsung/android/lib/episode/SceneResult$Builder;
++    invoke-static {v4, v5, v0}, Lcom/samsung/android/settings/asbase/vibration/SecSoundDeviceVibrationController$$ExternalSyntheticOutline0;->m(Landroid/content/ContentResolver;Ljava/lang/String;Ljava/lang/String;)V
+ 
+     goto/16 :goto_30
+ 
 -- 
-2.53.0
+2.55.0
 

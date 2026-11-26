@@ -1,1381 +1,502 @@
-From 5a9534ed44c2a27b7425941103411d0658580c9e Mon Sep 17 00:00:00 2001
-From: Salvo Giangreco <giangrecosalvo9@gmail.com>
-Date: Sun, 7 Sep 2025 13:32:10 +0200
-Subject: [PATCH] Add Adaptive color tone feature
+From bc7604eb7d6e8a66dc5fa8e73c61b948308575e7 Mon Sep 17 00:00:00 2001
+From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
+Date: Tue, 24 Nov 2026 14:57:35 +0800
+Subject: [PATCH] Add adaptive color tone feature
 
 ---
- .../EyeComfortSolutionService.smali           | 531 ++++++++++--------
- .../MdnieScenarioControlService.smali         |   2 +-
- ...anagerService$ScreenWatchingReceiver.smali |  62 +-
- ...MdnieManagerService$SettingsObserver.smali | 184 +++++-
- .../display/SemMdnieManagerService.smali      | 446 ++++++++++++++-
- 5 files changed, 950 insertions(+), 275 deletions(-)
+ .../EyeComfortSolutionService.smali           | 234 +++++++--
+ .../MdnieScenarioControlService.smali         |  13 +
+ .../display/SemMdnieManagerService.smali      | 478 +++++++++++++++++-
+ 3 files changed, 664 insertions(+), 61 deletions(-)
 
 diff --git a/smali_classes2/com/samsung/android/displaysolution/EyeComfortSolutionService.smali b/smali_classes2/com/samsung/android/displaysolution/EyeComfortSolutionService.smali
-index 6e666701e..c05114da5 100644
+index dfc590f7..74fe5a8e 100644
 --- a/smali_classes2/com/samsung/android/displaysolution/EyeComfortSolutionService.smali
 +++ b/smali_classes2/com/samsung/android/displaysolution/EyeComfortSolutionService.smali
-@@ -66,6 +66,8 @@
+@@ -38,6 +38,8 @@
+ 
+ .field public mBedtime_wednesday:I
+ 
++.field public mBlfIndexEadOffset:I
++
+ .field public mBlueLightFilterAdaptiveModeEnabled:Z
+ 
+ .field public mBlueLightFilterCustomAlwaysOn:Z
+@@ -64,6 +66,8 @@
  
  .field public mDisplayAiqeManager:Lcom/samsung/android/displayaiqe/DisplayAiqeManager;
  
-+.field public final mEnvironmentAdaptiveDisplaySupported:Z
++.field public mEnvironmentAdaptiveDisplaySupported:Z
 +
- .field public final mHandler:Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;
+ .field public mHandler:Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;
  
  .field public mLastBoprBlueLightFilterIndex:I
-@@ -458,412 +460,418 @@
+@@ -1551,6 +1555,8 @@
+ 
+     invoke-static {v11, v2}, Landroid/util/Slog;->d(Ljava/lang/String;Ljava/lang/String;)I
+ 
++    iput v1, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++
+     iget-boolean v2, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterModeEnabled:Z
+ 
+     if-nez v2, :cond_22
+@@ -1574,112 +1580,116 @@
  .end method
  
- .method public constructor <init>(Landroid/content/Context;)V
--    .locals 14
-+    .locals 16
+ .method public final setBlueLightFilterMode(IZ)V
+-    .locals 11
++    .locals 12
  
--    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
-+    move-object/from16 v0, p0
+-    iget-boolean v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
++    iget-boolean v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
  
--    const/4 v0, 0x0
-+    invoke-direct {v0}, Ljava/lang/Object;-><init>()V
+-    if-eqz v0, :cond_3
++    iget-boolean v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
  
--    iput-object v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mPrevmDNIeMode:Ljava/lang/String;
-+    const/4 v1, 0x0
+-    iget-object v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mContext:Landroid/content/Context;
++    if-eqz v1, :cond_9
  
--    const-string/jumbo v1, "eng"
-+    iput-object v1, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mPrevmDNIeMode:Ljava/lang/String;
+-    const-string/jumbo v1, "mDNIe"
++    iget-object v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mContext:Landroid/content/Context;
  
--    sget-object v2, Landroid/os/Build;->TYPE:Ljava/lang/String;
-+    const-string/jumbo v2, "eng"
- 
--    invoke-virtual {v1, v2}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-+    sget-object v3, Landroid/os/Build;->TYPE:Ljava/lang/String;
- 
--    const/16 v1, 0xfa0
-+    invoke-virtual {v2, v3}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
- 
--    iput v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->GET_SYSTEM_SERVICES_MILLIS:I
-+    const/16 v2, 0xfa0
- 
--    const/16 v2, 0x2710
-+    iput v2, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->GET_SYSTEM_SERVICES_MILLIS:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->ACTION_GET_BOPR_VALUE_DEBOUNCE_MILLIS:I
-+    const/16 v3, 0x2710
- 
--    const/4 v2, 0x0
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->ACTION_GET_BOPR_VALUE_DEBOUNCE_MILLIS:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->BOPR_MAX_VALUE:I
-+    const/4 v3, 0x0
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->bopr_cumulative_count:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->BOPR_MAX_VALUE:I
- 
--    const/4 v3, 0x4
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->bopr_cumulative_count:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mScreenModeSetting:I
-+    const/4 v4, 0x4
- 
--    const/4 v3, -0x1
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mScreenModeSetting:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mPrevClutValue:I
-+    const/4 v4, -0x1
- 
--    const/high16 v4, 0x3f800000    # 1.0f
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mPrevClutValue:I
- 
--    iput v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->app_weighting_factor:F
-+    const/high16 v5, 0x3f800000    # 1.0f
- 
--    const/4 v4, 0x0
-+    iput v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->app_weighting_factor:F
- 
--    iput v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->cal_value_sum:F
-+    const/4 v5, 0x0
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->prevTotalStep:I
-+    iput v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->cal_value_sum:F
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->BOPR_VALUE_STEP:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->prevTotalStep:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mLastDayBlueLightFilterIndex:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->BOPR_VALUE_STEP:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mLastBoprBlueLightFilterIndex:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mLastDayBlueLightFilterIndex:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mLastTotalBlueLightFilterIndex:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mLastBoprBlueLightFilterIndex:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNightDimFontConfigValue:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mLastTotalBlueLightFilterIndex:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNightDimFontConfigValuePrev:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNightDimFontConfigValue:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNightDimFontConfigValuePrev:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->defaultBedTime:I
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
- 
--    const/16 v4, 0x168
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->defaultBedTime:I
- 
--    iput v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->defaultWakeupTime:I
-+    const/16 v5, 0x168
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_sunday:I
-+    iput v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->defaultWakeupTime:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_monday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_sunday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_tuesday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_monday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_wednesday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_tuesday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_thursday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_wednesday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_friday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_thursday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_saturday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_friday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_sunday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBedtime_saturday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_monday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_sunday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_tuesday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_monday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_wednesday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_tuesday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_thursday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_wednesday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_friday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_thursday:I
- 
--    iput v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_saturday:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_friday:I
- 
--    iput v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalModeVersion:I
-+    iput v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mWakeupTime_saturday:I
- 
--    iput-object v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBoprSensor:Landroid/hardware/Sensor;
-+    iput v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalModeVersion:I
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mSupportAPmDNIe:Z
-+    iput-object v1, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBoprSensor:Landroid/hardware/Sensor;
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mScreenOn:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mSupportAPmDNIe:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterModeEnabled:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mScreenOn:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterAdaptiveModeEnabled:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterModeEnabled:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNightDimModeEnabled:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterAdaptiveModeEnabled:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mDefaultThemeEnabled:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNightDimModeEnabled:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mCurrentStateSleep:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mDefaultThemeEnabled:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mCurrentStateWakeup:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mCurrentStateSleep:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterEnableTime:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mCurrentStateWakeup:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterEnableTime:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterScheduledTime:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterCustomAlwaysOn:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterScheduledTime:Z
- 
--    iput-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalGammaScreenModeSupported:Z
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlueLightFilterCustomAlwaysOn:Z
- 
--    new-instance v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$1;
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mEnvironmentAdaptiveDisplaySupported:Z
- 
--    invoke-direct {v0, p0}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$1;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;)V
-+    iput-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalGammaScreenModeSupported:Z
- 
--    iput-object v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBoprSensorListener:Lcom/samsung/android/displaysolution/EyeComfortSolutionService$1;
-+    new-instance v1, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$1;
- 
--    iput-object p1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mContext:Landroid/content/Context;
-+    invoke-direct {v1, v0}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$1;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;)V
- 
--    const-string v0, "EyeComfortSolutionServiceThread"
-+    iput-object v1, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBoprSensorListener:Lcom/samsung/android/displaysolution/EyeComfortSolutionService$1;
- 
--    invoke-static {v0}, Lcom/android/server/KnoxCaptureInputFilter$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Landroid/os/HandlerThread;
-+    move-object/from16 v5, p1
+-    invoke-virtual {v0, v1}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
++    const-string/jumbo v2, "mDNIe"
  
 -    move-result-object v0
-+    iput-object v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mContext:Landroid/content/Context;
++    invoke-virtual {v1, v2}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
  
--    new-instance v10, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;
-+    const-string v1, "EyeComfortSolutionServiceThread"
+-    check-cast v0, Lcom/samsung/android/hardware/display/SemMdnieManager;
++    move-result-object v1
  
--    invoke-virtual {v0}, Landroid/os/HandlerThread;->getLooper()Landroid/os/Looper;
-+    invoke-static {v1}, Lcom/android/server/KnoxCaptureInputFilter$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Landroid/os/HandlerThread;
+-    iput-object v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
++    check-cast v1, Lcom/samsung/android/hardware/display/SemMdnieManager;
+ 
+-    new-instance v0, Ljava/lang/StringBuilder;
++    iput-object v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
+ 
+-    const-string/jumbo v1, "mMdnieManager : "
++    new-instance v1, Ljava/lang/StringBuilder;
+ 
+-    invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
++    const-string/jumbo v2, "mMdnieManager : "
+ 
+-    iget-object v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
++    invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+ 
+-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
++    iget-object v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
+ 
+-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
++    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
  
 -    move-result-object v0
++    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
++
 +    move-result-object v1
  
--    invoke-direct {v10, p0, v0}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;Landroid/os/Looper;)V
-+    new-instance v11, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;
+-    const-string v1, "EyeComfortSolutionService"
++    const-string v2, "EyeComfortSolutionService"
  
--    iput-object v10, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mHandler:Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;
-+    invoke-virtual {v1}, Landroid/os/HandlerThread;->getLooper()Landroid/os/Looper;
+-    invoke-static {v1, v0}, Landroid/util/Slog;->v(Ljava/lang/String;Ljava/lang/String;)I
++    invoke-static {v2, v1}, Landroid/util/Slog;->v(Ljava/lang/String;Ljava/lang/String;)I
  
--    invoke-virtual {p1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-+    move-result-object v1
+-    iget-boolean v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
++    iget-boolean v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mEnvironmentAdaptiveDisplaySupported:Z
  
--    move-result-object v0
-+    invoke-direct {v11, v0, v1}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;Landroid/os/Looper;)V
+-    const-string v2, " + 11] = "
++    const-wide v3, 0x404bc71c71c71c72L    # 55.55555555555556
  
--    const v5, 0x11101b0
-+    iput-object v11, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mHandler:Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;
+-    const-string v3, " , targetIndex : ["
++    const-wide v5, 0x403638e38e38e38eL    # 22.22222222222222
  
--    invoke-virtual {v0, v5}, Landroid/content/res/Resources;->getBoolean(I)Z
-+    invoke-virtual {v5}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
+-    const-string v4, "BLF Adaptive Mode Enable : "
++    const-string v7, " + 11] = "
  
--    move-result v0
-+    move-result-object v1
+-    const-wide v5, 0x40b7700000000000L    # 6000.0
++    const-string v8, " , targetIndex : ["
  
--    invoke-virtual {p1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-+    const v6, 0x11101b0
+-    if-eqz v0, :cond_0
++    const-string v9, "BLF Adaptive Mode Enable : "
  
--    move-result-object v5
-+    invoke-virtual {v1, v6}, Landroid/content/res/Resources;->getBoolean(I)Z
+-    const-wide v7, 0x403638e38e38e38eL    # 22.22222222222222
++    const-wide v10, 0x40b7700000000000L    # 6000.0
  
--    const v6, 0x10e0020
-+    move-result v1
+-    int-to-double v9, p1
++    if-nez v1, :cond_2
  
--    invoke-virtual {v5, v6}, Landroid/content/res/Resources;->getInteger(I)I
-+    invoke-virtual {v5}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
+-    mul-double/2addr v9, v7
++    if-eqz v0, :cond_0
  
--    move-result v5
-+    move-result-object v6
+-    sub-double/2addr v5, v9
++    int-to-double v0, p1
  
--    iput v5, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->BOPR_MAX_VALUE:I
-+    const v7, 0x10e0020
+-    iput-wide v5, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++    mul-double/2addr v0, v5
  
--    const-string v11, "EyeComfortSolutionService"
-+    invoke-virtual {v6, v7}, Landroid/content/res/Resources;->getInteger(I)I
- 
--    const-string/jumbo v5, "mEnvironmentAdaptiveDisplaySupported false"
-+    move-result v6
- 
--    invoke-static {v11, v5}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+    iput v6, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->BOPR_MAX_VALUE:I
- 
--    new-instance v5, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$SettingsObserver;
-+    const/4 v12, 0x1
- 
--    invoke-direct {v5, p0, v10}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$SettingsObserver;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;)V
-+    iput-boolean v12, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mEnvironmentAdaptiveDisplaySupported:Z
- 
--    invoke-virtual {p1}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+    const-string v13, "EyeComfortSolutionService"
- 
--    move-result-object v6
-+    const-string/jumbo v6, "mEnvironmentAdaptiveDisplaySupported true"
- 
--    invoke-static {}, Landroid/os/SystemClock;->uptimeMillis()J
-+    invoke-static {v13, v6}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
- 
--    move-result-wide v12
-+    new-instance v6, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$SettingsObserver;
- 
--    const-string/jumbo v7, "blue_light_filter"
-+    invoke-direct {v6, v0, v11}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$SettingsObserver;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ECSControlHandler;)V
- 
--    invoke-static {v7}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-+    invoke-virtual {v5}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
- 
-     move-result-object v7
- 
--    invoke-virtual {v6, v7, v2, v5, v3}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
-+    invoke-static {}, Landroid/os/SystemClock;->uptimeMillis()J
- 
--    const-string/jumbo v7, "blue_light_filter_night_dim"
-+    move-result-wide v14
- 
--    invoke-static {v7}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-+    const-string/jumbo v8, "blue_light_filter"
- 
--    move-result-object v7
-+    invoke-static {v8}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
- 
--    invoke-virtual {v6, v7, v2, v5, v3}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
-+    move-result-object v8
- 
--    const-string/jumbo v7, "blue_light_filter_adaptive_mode"
-+    invoke-virtual {v7, v8, v3, v6, v4}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
- 
--    invoke-static {v7}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-+    const-string/jumbo v8, "blue_light_filter_night_dim"
- 
--    move-result-object v7
-+    invoke-static {v8}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
- 
--    invoke-virtual {v6, v7, v2, v5, v3}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
-+    move-result-object v8
- 
--    const-string/jumbo v7, "current_sec_active_themepackage"
-+    invoke-virtual {v7, v8, v3, v6, v4}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
- 
--    invoke-static {v7}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-+    const-string/jumbo v8, "blue_light_filter_adaptive_mode"
- 
--    move-result-object v7
-+    invoke-static {v8}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
- 
--    invoke-virtual {v6, v7, v2, v5, v3}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
-+    move-result-object v8
- 
--    const-string/jumbo v7, "blue_light_filter_type"
-+    invoke-virtual {v7, v8, v3, v6, v4}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
- 
--    invoke-static {v7}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-+    const-string/jumbo v8, "current_sec_active_themepackage"
- 
--    move-result-object v7
-+    invoke-static {v8}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
- 
--    invoke-virtual {v6, v7, v2, v5, v3}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
-+    move-result-object v8
- 
--    const-string/jumbo v3, "screen_mode_setting"
-+    invoke-virtual {v7, v8, v3, v6, v4}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
- 
--    invoke-static {v3}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
-+    const-string/jumbo v8, "blue_light_filter_type"
- 
--    move-result-object v3
-+    invoke-static {v8}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
+-    invoke-static {p1, v4, v3, v2, p2}, Lcom/android/server/accessibility/ProxyManager$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
++    sub-double/2addr v10, v0
 +
-+    move-result-object v8
- 
--    const/4 v7, -0x2
-+    invoke-virtual {v7, v8, v3, v6, v4}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
- 
--    invoke-virtual {v6, v3, v2, v5, v7}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
-+    const-string/jumbo v4, "screen_mode_setting"
- 
--    new-instance v7, Landroid/content/IntentFilter;
-+    invoke-static {v4}, Landroid/provider/Settings$System;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;
- 
--    invoke-direct {v7}, Landroid/content/IntentFilter;-><init>()V
-+    move-result-object v4
- 
--    const-string/jumbo v3, "android.intent.action.BOOT_COMPLETED"
-+    const/4 v8, -0x2
- 
--    const-string/jumbo v5, "android.intent.action.USER_SWITCHED"
-+    invoke-virtual {v7, v4, v3, v6, v8}, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V
- 
--    const-string/jumbo v6, "android.intent.action.SCREEN_ON"
-+    new-instance v8, Landroid/content/IntentFilter;
- 
--    const-string/jumbo v8, "android.intent.action.SCREEN_OFF"
-+    invoke-direct {v8}, Landroid/content/IntentFilter;-><init>()V
- 
--    invoke-static {v7, v3, v5, v6, v8}, Lcom/android/server/am/ActivityManagerService$$ExternalSyntheticOutline0;->m(Landroid/content/IntentFilter;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-+    const-string/jumbo v4, "android.intent.action.BOOT_COMPLETED"
- 
--    const-string/jumbo v3, "android.intent.action.USER_PRESENT"
-+    const-string/jumbo v6, "android.intent.action.USER_SWITCHED"
- 
--    const-string/jumbo v5, "android.intent.action.TIME_TICK"
-+    const-string/jumbo v7, "android.intent.action.SCREEN_ON"
- 
--    const-string/jumbo v6, "android.intent.action.TIME_SET"
-+    const-string/jumbo v9, "android.intent.action.SCREEN_OFF"
- 
--    const-string/jumbo v8, "android.intent.action.TIMEZONE_CHANGED"
-+    invoke-static {v8, v4, v6, v7, v9}, Lcom/android/server/am/ActivityManagerService$$ExternalSyntheticOutline0;->m(Landroid/content/IntentFilter;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
- 
--    invoke-static {v7, v3, v5, v6, v8}, Lcom/android/server/am/ActivityManagerService$$ExternalSyntheticOutline0;->m(Landroid/content/IntentFilter;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-+    const-string/jumbo v4, "android.intent.action.USER_PRESENT"
- 
--    const-string/jumbo v3, "com.sec.android.intent.action.HQM_UPDATE_REQ"
-+    const-string/jumbo v6, "android.intent.action.TIME_TICK"
- 
--    invoke-virtual {v7, v3}, Landroid/content/IntentFilter;->addAction(Ljava/lang/String;)V
-+    const-string/jumbo v7, "android.intent.action.TIME_SET"
- 
--    new-instance v5, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ScreenWatchingReceiver;
-+    const-string/jumbo v9, "android.intent.action.TIMEZONE_CHANGED"
- 
--    invoke-direct {v5, p0}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ScreenWatchingReceiver;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;)V
-+    invoke-static {v8, v4, v6, v7, v9}, Lcom/android/server/am/ActivityManagerService$$ExternalSyntheticOutline0;->m(Landroid/content/IntentFilter;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
- 
--    sget-object v6, Landroid/os/UserHandle;->ALL:Landroid/os/UserHandle;
-+    const-string/jumbo v4, "com.sec.android.intent.action.HQM_UPDATE_REQ"
- 
--    const/4 v8, 0x0
-+    invoke-virtual {v8, v4}, Landroid/content/IntentFilter;->addAction(Ljava/lang/String;)V
- 
--    const/4 v9, 0x0
-+    new-instance v6, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ScreenWatchingReceiver;
- 
--    move-object v4, p1
-+    invoke-direct {v6, v0}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService$ScreenWatchingReceiver;-><init>(Lcom/samsung/android/displaysolution/EyeComfortSolutionService;)V
- 
--    invoke-virtual/range {v4 .. v9}, Landroid/content/Context;->registerReceiverAsUser(Landroid/content/BroadcastReceiver;Landroid/os/UserHandle;Landroid/content/IntentFilter;Ljava/lang/String;Landroid/os/Handler;)Landroid/content/Intent;
-+    sget-object v7, Landroid/os/UserHandle;->ALL:Landroid/os/UserHandle;
- 
--    const/4 v3, 0x1
-+    const/4 v9, 0x0
- 
--    invoke-virtual {v10, v3}, Landroid/os/Handler;->removeMessages(I)V
-+    const/4 v10, 0x0
- 
--    int-to-long v4, v1
-+    invoke-virtual/range {v5 .. v10}, Landroid/content/Context;->registerReceiverAsUser(Landroid/content/BroadcastReceiver;Landroid/os/UserHandle;Landroid/content/IntentFilter;Ljava/lang/String;Landroid/os/Handler;)Landroid/content/Intent;
- 
--    add-long/2addr v12, v4
-+    invoke-virtual {v11, v12}, Landroid/os/Handler;->removeMessages(I)V
- 
--    invoke-virtual {v10, v3, v12, v13}, Landroid/os/Handler;->sendEmptyMessageAtTime(IJ)Z
-+    int-to-long v4, v2
++    iput-wide v10, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
 +
-+    add-long/2addr v14, v4
-+
-+    invoke-virtual {v11, v12, v14, v15}, Landroid/os/Handler;->sendEmptyMessageAtTime(IJ)Z
++    invoke-static {p1, v9, v8, v7, p2}, Lcom/android/server/accessibility/ProxyManager$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
  
-     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
+     move-result-object v0
  
--    move-result-object v1
-+    move-result-object v2
+-    iget-wide v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++    iget-wide v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
  
-     const-string/jumbo v4, "SEC_FLOATING_FEATURE_LCD_SUPPORT_BLUE_FILTER_ADAPTIVE_MODE"
+-    invoke-virtual {v0, v2, v3}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v3, v4}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
  
--    invoke-virtual {v1, v4, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
-+    invoke-virtual {v2, v4, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
+     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
  
--    move-result v1
-+    move-result v2
+     move-result-object v0
  
--    if-lez v1, :cond_0
-+    if-lez v2, :cond_0
- 
--    iput-boolean v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
-+    iput-boolean v12, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
- 
-     :cond_0
-     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
- 
--    move-result-object v1
-+    move-result-object v2
- 
--    invoke-virtual {v1, v4, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
-+    invoke-virtual {v2, v4, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
- 
--    move-result v1
-+    move-result v2
- 
--    if-ne v1, v3, :cond_1
-+    if-ne v2, v12, :cond_1
- 
--    iput-boolean v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
-+    iput-boolean v12, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
- 
-     :cond_1
-     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
- 
--    move-result-object v1
-+    move-result-object v2
- 
-     const-string/jumbo v4, "SEC_FLOATING_FEATURE_LCD_CONFIG_NATURAL_MODE_TYPE"
- 
--    invoke-virtual {v1, v4, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
-+    invoke-virtual {v2, v4, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
- 
--    move-result v1
-+    move-result v2
- 
--    if-lez v1, :cond_2
-+    if-lez v2, :cond_2
- 
--    iput-boolean v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalGammaScreenModeSupported:Z
-+    iput-boolean v12, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalGammaScreenModeSupported:Z
- 
-     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
- 
--    move-result-object v1
-+    move-result-object v2
- 
--    invoke-virtual {v1, v4, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
-+    invoke-virtual {v2, v4, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getInt(Ljava/lang/String;I)I
- 
--    move-result v1
-+    move-result v2
- 
--    iput v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalModeVersion:I
-+    iput v2, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mNaturalModeVersion:I
- 
-     :cond_2
-     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
- 
--    move-result-object v1
-+    move-result-object v2
- 
--    const-string/jumbo v2, "SEC_FLOATING_FEATURE_LCD_CONFIG_HW_MDNIE"
-+    const-string/jumbo v3, "SEC_FLOATING_FEATURE_LCD_CONFIG_HW_MDNIE"
- 
--    invoke-virtual {v1, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getString(Ljava/lang/String;)Ljava/lang/String;
-+    invoke-virtual {v2, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getString(Ljava/lang/String;)Ljava/lang/String;
- 
--    move-result-object v1
-+    move-result-object v2
- 
--    const-string v2, "DDI"
-+    const-string v3, "DDI"
- 
--    invoke-virtual {v2, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-+    invoke-virtual {v3, v2}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
- 
--    move-result v1
-+    move-result v2
- 
--    if-nez v1, :cond_3
-+    if-nez v2, :cond_3
- 
--    iput-boolean v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mSupportAPmDNIe:Z
-+    iput-boolean v12, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mSupportAPmDNIe:Z
- 
-     :cond_3
--    new-instance v1, Ljava/lang/StringBuilder;
-+    new-instance v2, Ljava/lang/StringBuilder;
- 
--    const-string v2, "A_BLF : "
-+    const-string v3, "A_BLF : "
- 
--    invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+    invoke-direct {v2, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
- 
--    iget-boolean v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
-+    iget-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
- 
--    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
- 
--    const-string v2, " , COPR_IP : "
-+    const-string v3, " , COPR_IP : "
- 
--    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
- 
--    iget-boolean p0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
-+    iget-boolean v0, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
- 
--    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-+    invoke-virtual {v2, v0}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
- 
--    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
- 
--    move-result-object p0
-+    move-result-object v0
- 
--    invoke-static {v11, p0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+    invoke-static {v13, v0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
- 
--    const-string/jumbo p0, "sys.eyecomfortsolution.ecson"
-+    const-string/jumbo v0, "sys.eyecomfortsolution.ecson"
- 
--    const-string/jumbo v1, "false"
-+    const-string/jumbo v2, "false"
- 
--    invoke-static {p0, v1}, Landroid/os/SystemProperties;->set(Ljava/lang/String;Ljava/lang/String;)V
-+    invoke-static {v0, v2}, Landroid/os/SystemProperties;->set(Ljava/lang/String;Ljava/lang/String;)V
- 
--    if-eqz v0, :cond_4
-+    if-eqz v1, :cond_4
- 
--    const-string/jumbo v0, "true"
-+    const-string/jumbo v1, "true"
- 
--    invoke-static {p0, v0}, Landroid/os/SystemProperties;->set(Ljava/lang/String;Ljava/lang/String;)V
-+    invoke-static {v0, v1}, Landroid/os/SystemProperties;->set(Ljava/lang/String;Ljava/lang/String;)V
- 
-     :cond_4
--    const-string p0, "EyeComfortSolutionService Enabled"
-+    const-string v0, "EyeComfortSolutionService Enabled"
- 
--    invoke-static {v11, p0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+    invoke-static {v13, v0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
- 
-     return-void
- .end method
-@@ -1995,7 +2003,7 @@
- 
-     iget-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mAdaptiveBlueLightFilterSupported:Z
- 
--    if-eqz v3, :cond_3
-+    if-eqz v3, :cond_7
- 
-     iget-boolean v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mColorOnPixelRatioSupported:Z
- 
-@@ -2007,9 +2015,9 @@
- 
-     const-string v7, "BLF Adaptive Mode Enable : "
- 
--    const-wide v8, 0x403638e38e38e38eL    # 22.22222222222222
-+    const-string v8, "EyeComfortSolutionService"
- 
--    const-string v10, "EyeComfortSolutionService"
-+    const-wide v9, 0x403638e38e38e38eL    # 22.22222222222222
- 
-     const-wide v11, 0x40b7700000000000L    # 6000.0
- 
-@@ -2017,24 +2025,24 @@
- 
-     int-to-double v13, v1
- 
--    mul-double/2addr v13, v8
-+    mul-double/2addr v13, v9
- 
-     sub-double v13, v11, v13
- 
-     invoke-static {v1, v7, v6, v5, v2}, Lcom/android/server/accessibility/AccessibilityManagerService$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
- 
--    move-result-object v3
-+    move-result-object v5
- 
--    invoke-virtual {v3, v13, v14}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
-+    invoke-virtual {v5, v13, v14}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
- 
--    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    invoke-virtual {v5, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
- 
-     iget v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
- 
--    invoke-static {v3, v4, v10}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
-+    invoke-static {v5, v4, v8}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
- 
-     :cond_0
--    move-wide v15, v8
-+    move-wide v15, v9
+-    invoke-static {v1, v0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
++    invoke-static {v2, v0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
  
      goto :goto_0
  
-@@ -2043,58 +2051,62 @@
+     :cond_0
+     if-nez v0, :cond_1
  
-     const-wide v13, 0x404bc71c71c71c72L    # 55.55555555555556
+-    const-wide v7, 0x404bc71c71c71c72L    # 55.55555555555556
+-
+-    int-to-double v9, p1
++    int-to-double v0, p1
  
--    move-wide v15, v8
-+    move-wide v15, v9
+-    mul-double/2addr v9, v7
++    mul-double/2addr v0, v3
  
--    int-to-double v8, v1
-+    int-to-double v9, v1
+-    sub-double/2addr v5, v9
++    sub-double/2addr v10, v0
  
--    mul-double/2addr v8, v13
-+    mul-double/2addr v9, v13
+-    iput-wide v5, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++    iput-wide v10, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
  
--    sub-double v8, v11, v8
-+    sub-double v9, v11, v9
+-    invoke-static {p1, v4, v3, v2, p2}, Lcom/android/server/accessibility/ProxyManager$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
++    invoke-static {p1, v9, v8, v7, p2}, Lcom/android/server/accessibility/ProxyManager$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
  
-     invoke-static {v1, v7, v6, v5, v2}, Lcom/android/server/accessibility/AccessibilityManagerService$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
+     move-result-object v0
  
--    move-result-object v3
-+    move-result-object v5
+-    iget-wide v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++    iget-wide v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
  
--    invoke-virtual {v3, v8, v9}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
-+    invoke-virtual {v5, v9, v10}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
+-    invoke-virtual {v0, v2, v3}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v3, v4}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
  
--    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    invoke-virtual {v5, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
  
-     iget v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
+     move-result-object v0
  
--    invoke-static {v3, v4, v10}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
-+    invoke-static {v5, v4, v8}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
+-    invoke-static {v1, v0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
++    invoke-static {v2, v0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
  
+     :cond_1
      :goto_0
--    iget-object v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mContext:Landroid/content/Context;
-+    iget-object v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mContext:Landroid/content/Context;
+     iget-object v0, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
  
--    const-string/jumbo v4, "mDNIe"
-+    const-string/jumbo v5, "mDNIe"
+-    if-eqz v0, :cond_2
++    if-eqz v0, :cond_8
  
--    invoke-virtual {v3, v4}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
-+    invoke-virtual {v4, v5}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+     add-int/lit8 v1, p1, 0xb
  
--    move-result-object v3
-+    move-result-object v4
+@@ -1697,10 +1707,144 @@
  
--    check-cast v3, Lcom/samsung/android/hardware/display/SemMdnieManager;
-+    check-cast v4, Lcom/samsung/android/hardware/display/SemMdnieManager;
+     invoke-virtual {v0, p2, v1}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightMode(ZI)Z
  
--    iput-object v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
-+    iput-object v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
- 
--    new-instance v3, Ljava/lang/StringBuilder;
-+    new-instance v4, Ljava/lang/StringBuilder;
- 
--    const-string/jumbo v4, "mMdnieManager : "
-+    const-string/jumbo v5, "mMdnieManager : "
- 
--    invoke-direct {v3, v4}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+    invoke-direct {v4, v5}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
- 
--    iget-object v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
-+    iget-object v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
- 
--    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
-+    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
- 
--    invoke-virtual {v3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+    invoke-virtual {v4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
- 
--    move-result-object v3
-+    move-result-object v4
-+
-+    invoke-static {v8, v4}, Landroid/util/Slog;->v(Ljava/lang/String;Ljava/lang/String;)I
-+
-+    iget-boolean v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mEnvironmentAdaptiveDisplaySupported:Z
- 
--    invoke-static {v10, v3}, Landroid/util/Slog;->v(Ljava/lang/String;Ljava/lang/String;)I
-+    if-nez v4, :cond_2
- 
-     iget-object v3, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
- 
--    if-eqz v3, :cond_2
-+    if-eqz v3, :cond_6
- 
-     add-int/lit8 v4, v1, 0xb
- 
-@@ -2116,10 +2128,77 @@
- 
-     invoke-virtual {v3, v2, v4}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightMode(ZI)Z
- 
-+    goto :goto_3
++    goto/16 :goto_4
 +
      :cond_2
--    invoke-virtual/range {p0 .. p1}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->updateNightDimSettings(I)V
-+    if-eqz v4, :cond_6
+-    invoke-virtual {p0, p1}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->updateNightDimSettings(I)V
++    if-eqz v1, :cond_8
 +
-+    iget-object v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
++    const-string v1, " , ead offset : "
 +
-+    if-eqz v4, :cond_6
++    if-eqz v0, :cond_3
 +
-+    if-eqz v3, :cond_3
++    iget v3, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
 +
-+    const/16 v3, 0x65
++    add-int/2addr v3, p1
++
++    int-to-double v3, v3
++
++    mul-double/2addr v3, v5
++
++    sub-double/2addr v10, v3
++
++    iput-wide v10, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++
++    invoke-static {v9, v8, p2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
++
++    move-result-object v3
++
++    iget v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++
++    add-int/2addr v4, p1
++
++    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
++
++    invoke-virtual {v3, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++
++    iget-wide v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++
++    invoke-virtual {v3, v4, v5}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
++
++    invoke-virtual {v3, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++
++    iget v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++
++    invoke-static {v3, v1, v2}, Lcom/android/server/SystemConfig$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
 +
 +    goto :goto_1
  
      :cond_3
-+    if-nez v3, :cond_4
++    if-nez v0, :cond_4
 +
-+    const/16 v3, 0x2f
++    iget v5, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
 +
-+    goto :goto_1
++    add-int/2addr v5, p1
++
++    int-to-double v5, v5
++
++    mul-double/2addr v5, v3
++
++    sub-double/2addr v10, v5
++
++    iput-wide v10, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++
++    invoke-static {v9, v8, p2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/StringBuilder;
++
++    move-result-object v3
++
++    iget v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++
++    add-int/2addr v4, p1
++
++    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
++
++    invoke-virtual {v3, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++
++    iget-wide v4, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++
++    invoke-virtual {v3, v4, v5}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
++
++    invoke-virtual {v3, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++
++    iget v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++
++    invoke-static {v3, v1, v2}, Lcom/android/server/SystemConfig$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
 +
 +    :cond_4
-+    const/4 v3, 0x0
-+
 +    :goto_1
-+    iget v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++    iget-object v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
 +
-+    add-int/2addr v5, v1
++    if-eqz v1, :cond_8
 +
-+    add-int/lit8 v5, v5, 0xb
++    if-eqz v0, :cond_5
 +
-+    if-le v5, v3, :cond_5
++    const/16 v0, 0x65
 +
 +    goto :goto_2
 +
 +    :cond_5
-+    move v3, v5
++    if-nez v0, :cond_6
 +
-+    :goto_2
-+    invoke-virtual {v4, v3}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightModeStep(I)Z
++    const/16 v0, 0x2f
 +
-+    iget-object v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
-+
-+    int-to-double v5, v1
-+
-+    mul-double/2addr v5, v15
-+
-+    sub-double/2addr v11, v5
-+
-+    iget v5, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
-+
-+    mul-int/lit8 v5, v5, 0x16
-+
-+    int-to-double v5, v5
-+
-+    sub-double/2addr v11, v5
-+
-+    double-to-int v5, v11
-+
-+    invoke-virtual {v4, v5}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightModeCct(I)Z
-+
-+    iget-object v4, v0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
-+
-+    invoke-virtual {v4, v2, v3}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightMode(ZI)Z
++    goto :goto_2
 +
 +    :cond_6
-+    :goto_3
-+    invoke-virtual/range {p0 .. p1}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->updateNightDimSettings(I)V
++    const/4 v0, 0x0
++
++    :goto_2
++    iget v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mBlfIndexEadOffset:I
++
++    add-int/2addr v2, p1
++
++    add-int/lit8 v2, v2, 0xb
++
++    if-le v2, v0, :cond_7
++
++    goto :goto_3
 +
 +    :cond_7
++    move v0, v2
++
++    :goto_3
++    invoke-virtual {v1, v0}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightModeStep(I)Z
++
++    iget-object v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
++
++    iget-wide v2, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mTagetValue:D
++
++    double-to-int v2, v2
++
++    invoke-virtual {v1, v2}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightModeCct(I)Z
++
++    iget-object v1, p0, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->mMdnieManager:Lcom/samsung/android/hardware/display/SemMdnieManager;
++
++    invoke-virtual {v1, p2, v0}, Lcom/samsung/android/hardware/display/SemMdnieManager;->setNightMode(ZI)Z
++
++    :cond_8
++    :goto_4
++    invoke-virtual {p0, p1}, Lcom/samsung/android/displaysolution/EyeComfortSolutionService;->updateNightDimSettings(I)V
++
++    :cond_9
      return-void
  .end method
  
 diff --git a/smali_classes2/com/samsung/android/displaysolution/MdnieScenarioControlService.smali b/smali_classes2/com/samsung/android/displaysolution/MdnieScenarioControlService.smali
-index 3b2808baa..af9ab229a 100644
+index 21f04f46..43565426 100644
 --- a/smali_classes2/com/samsung/android/displaysolution/MdnieScenarioControlService.smali
 +++ b/smali_classes2/com/samsung/android/displaysolution/MdnieScenarioControlService.smali
-@@ -2013,7 +2013,7 @@
-     invoke-static {v4, v1, v7}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
+@@ -3290,12 +3290,15 @@
+ .method public final wcg_property_changed(I)V
+     .locals 4
  
-     :cond_4
--    const-string/jumbo v1, "mEnvironmentAdaptiveDisplaySupported false , mGlareReductionSupported : false"
-+    const-string/jumbo v1, "mEnvironmentAdaptiveDisplaySupported true , mGlareReductionSupported : false"
++    .line 95
+     iget v0, p0, Lcom/samsung/android/displaysolution/MdnieScenarioControlService;->mPrevPropertyValue:I
  
-     invoke-static {v7, v1}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
+     if-eq p1, v0, :cond_0
  
-diff --git a/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver.smali b/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver.smali
-index b961d71d2..bdaa2a68c 100644
---- a/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver.smali
-+++ b/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver.smali
-@@ -59,6 +59,8 @@
++    .line 96
+     iput p1, p0, Lcom/samsung/android/displaysolution/MdnieScenarioControlService;->mPrevPropertyValue:I
  
-     iget-boolean p2, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mSupportAPmDNIe:Z
++    .line 97
+     new-instance p0, Ljava/lang/StringBuilder;
  
-+    const/4 v2, -0x2
-+
-     if-eqz p2, :cond_1
+     const-string v0, "GRAPHIC_PROPERTY("
+@@ -3316,6 +3319,7 @@
  
-     iget-object p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mDisplayAiqeManager:Lcom/samsung/android/displayaiqe/DisplayAiqeManager;
-@@ -101,7 +103,53 @@
+     invoke-static {v0, p0}, Landroid/util/Slog;->d(Ljava/lang/String;Ljava/lang/String;)I
+ 
++    .line 98
+     const-string/jumbo p0, "persist.sys.sf.native_mode"
+ 
+     invoke-static {p1}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
+@@ -3324,6 +3328,7 @@
+ 
+     invoke-static {p0, v1}, Landroid/os/SemSystemProperties;->set(Ljava/lang/String;Ljava/lang/String;)V
+ 
++    .line 99
+     const-string/jumbo p0, "SurfaceFlinger"
+ 
+     invoke-static {p0}, Landroid/os/ServiceManager;->getService(Ljava/lang/String;)Landroid/os/IBinder;
+@@ -3332,14 +3337,17 @@
+ 
+     if-eqz p0, :cond_0
+ 
++    .line 100
+     invoke-static {}, Landroid/os/Parcel;->obtain()Landroid/os/Parcel;
+ 
+     move-result-object v1
+ 
++    .line 101
+     const-string/jumbo v2, "android.ui.ISurfaceComposer"
+ 
+     invoke-virtual {v1, v2}, Landroid/os/Parcel;->writeInterfaceToken(Ljava/lang/String;)V
+ 
++    .line 102
+     invoke-virtual {v1, p1}, Landroid/os/Parcel;->writeInt(I)V
+ 
+     const/4 p1, 0x0
+@@ -3348,12 +3356,14 @@
+ 
+     const/16 v3, 0x3ff
+ 
++    .line 103
+     :try_start_0
+     invoke-interface {p0, v3, v1, p1, v2}, Landroid/os/IBinder;->transact(ILandroid/os/Parcel;Landroid/os/Parcel;I)Z
+     :try_end_0
+     .catch Landroid/os/RemoteException; {:try_start_0 .. :try_end_0} :catch_0
+     .catchall {:try_start_0 .. :try_end_0} :catchall_0
+ 
++    .line 104
+     invoke-virtual {v1}, Landroid/os/Parcel;->recycle()V
+ 
+     return-void
+@@ -3366,6 +3376,7 @@
+     :catch_0
+     move-exception p0
+ 
++    .line 105
+     :try_start_1
+     const-string p1, "Failed to set display color_setting"
+ 
+@@ -3373,6 +3384,7 @@
+     :try_end_1
+     .catchall {:try_start_1 .. :try_end_1} :catchall_0
+ 
++    .line 106
+     invoke-virtual {v1}, Landroid/os/Parcel;->recycle()V
+ 
+     return-void
+@@ -3380,6 +3392,7 @@
      :goto_0
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
+     invoke-virtual {v1}, Landroid/os/Parcel;->recycle()V
  
--    invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-+    iget-boolean p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
-+
-+    if-eqz p1, :cond_1
-+
-+    new-instance p1, Ljava/lang/StringBuilder;
-+
-+    const-string p2, "AP setEnvironmentAdaptiveDisplayMode : "
-+
-+    invoke-direct {p1, p2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+
-+    iget-object p2, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object p2, p2, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {p2}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object p2
-+
-+    const-string/jumbo v3, "ead_enabled"
-+
-+    invoke-static {p2, v3, v0, v2}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result p2
-+
-+    invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+
-+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+
-+    move-result-object p1
-+
-+    invoke-static {v1, p1}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+
-+    iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object p2, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mDisplayAiqeManager:Lcom/samsung/android/displayaiqe/DisplayAiqeManager;
-+
-+    iget-object p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {p1}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object p1
-+
-+    invoke-static {p1, v3, v0, v2}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result p1
-+
-+    invoke-virtual {p2, p1}, Lcom/samsung/android/displayaiqe/DisplayAiqeManager;->setEnvironmentAdaptiveDisplayMode(I)Z
++    .line 107
+     throw p0
  
-     :cond_1
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-@@ -112,13 +160,11 @@
- 
-     move-result-object p2
- 
--    const-string/jumbo v2, "screen_mode_setting"
--
--    const/4 v3, 0x4
-+    const-string/jumbo v3, "screen_mode_setting"
- 
--    const/4 v4, -0x2
-+    const/4 v4, 0x4
- 
--    invoke-static {p2, v2, v3, v4}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+    invoke-static {p2, v3, v4, v2}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
- 
-     move-result p2
- 
-@@ -128,7 +174,7 @@
- 
-     iget p2, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mScreenModeSetting:I
- 
--    if-eq p2, v3, :cond_3
-+    if-eq p2, v4, :cond_3
- 
-     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
- 
-@@ -158,7 +204,7 @@
-     goto :goto_1
- 
-     :cond_3
--    iput v3, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mScreenMode:I
-+    iput v4, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mScreenMode:I
- 
-     :goto_1
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$ScreenWatchingReceiver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-diff --git a/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver.smali b/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver.smali
-index 71eff30d3..787961d67 100644
---- a/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver.smali
-+++ b/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver.smali
-@@ -103,7 +103,7 @@
- 
-     const-string/jumbo v7, "SemMdnieManagerService"
- 
--    if-nez p1, :cond_c
-+    if-nez p1, :cond_f
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -214,7 +214,7 @@
-     :cond_3
-     const/4 p2, 0x2
- 
--    if-ne p1, p2, :cond_a
-+    if-ne p1, p2, :cond_d
- 
-     iget-boolean p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mNightMode:Z
- 
-@@ -254,26 +254,156 @@
- 
-     move-result p1
- 
--    if-eqz p1, :cond_6
-+    if-eqz p1, :cond_9
- 
-     const-string p1, "EAD_ENABLED_URI onChange"
- 
-     invoke-static {v7, p1}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
- 
-+    iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-boolean p2, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
-+
-+    if-eqz p2, :cond_d
-+
-+    iget-boolean p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mSupportAPmDNIe:Z
-+
-+    const-string/jumbo p2, "ead_enabled"
-+
-+    if-eqz p1, :cond_6
-+
-+    new-instance p1, Ljava/lang/StringBuilder;
-+
-+    const-string v0, "AP setEnvironmentAdaptiveDisplayMode : "
-+
-+    invoke-direct {p1, v0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+
-+    iget-object v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object v0, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object v0
-+
-+    invoke-static {v0, p2, v6, v10}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result v0
-+
-+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+
-+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+
-+    move-result-object p1
-+
-+    invoke-static {v7, p1}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+
-+    iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object v0, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mDisplayAiqeManager:Lcom/samsung/android/displayaiqe/DisplayAiqeManager;
-+
-+    iget-object p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {p1}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object p1
-+
-+    invoke-static {p1, p2, v6, v10}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result p1
-+
-+    invoke-virtual {v0, p1}, Lcom/samsung/android/displayaiqe/DisplayAiqeManager;->setEnvironmentAdaptiveDisplayMode(I)Z
-+
-+    goto :goto_1
-+
-+    :cond_6
-+    const-string p1, "/sys/class/mdnie/mdnie/adaptive_mode"
-+
-+    invoke-static {p1}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
-+
-+    move-result v0
-+
-+    if-eqz v0, :cond_7
-+
-+    iget-object v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object v0, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object v0
-+
-+    invoke-static {v0, p2, v6, v10}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result v0
-+
-+    invoke-static {v0, p1}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite(ILjava/lang/String;)Z
-+
-+    :cond_7
-+    const-string p1, "/sys/class/mdnie/mdnie1/adaptive_mode"
-+
-+    invoke-static {p1}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
-+
-+    move-result v0
-+
-+    if-eqz v0, :cond_8
-+
-+    iget-object v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object v0, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object v0
-+
-+    invoke-static {v0, p2, v6, v10}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result v0
-+
-+    invoke-static {v0, p1}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite(ILjava/lang/String;)Z
-+
-+    :cond_8
-+    new-instance p1, Ljava/lang/StringBuilder;
-+
-+    const-string v0, "DDI setEnvironmentAdaptiveDisplayMode : "
-+
-+    invoke-direct {p1, v0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+
-+    iget-object v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
-+
-+    iget-object v0, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
-+
-+    invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-+
-+    move-result-object v0
-+
-+    invoke-static {v0, p2, v6, v10}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
-+
-+    move-result p2
-+
-+    invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+
-+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+
-+    move-result-object p1
-+
-+    invoke-static {v7, p1}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+
-+    :goto_1
-     iget-object p0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
--    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-+    invoke-static {p0}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->-$$Nest$msetting_is_changed(Lcom/samsung/android/hardware/display/SemMdnieManagerService;)V
- 
-     return-void
- 
--    :cond_6
-+    :cond_9
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->VIVIDNESS_STATE_URI:Landroid/net/Uri;
- 
-     invoke-virtual {p1, p2}, Landroid/net/Uri;->equals(Ljava/lang/Object;)Z
- 
-     move-result p1
- 
--    if-eqz p1, :cond_b
-+    if-eqz p1, :cond_e
- 
-     invoke-static {v7, v3}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
- 
-@@ -285,7 +415,7 @@
- 
-     move-result p1
- 
--    if-lez p1, :cond_a
-+    if-lez p1, :cond_d
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -295,7 +425,7 @@
- 
-     iget-boolean p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mSupportAPmDNIe:Z
- 
--    if-eqz p1, :cond_7
-+    if-eqz p1, :cond_a
- 
-     new-instance p1, Ljava/lang/StringBuilder;
- 
-@@ -317,12 +447,12 @@
- 
-     return-void
- 
--    :cond_7
-+    :cond_a
-     invoke-static {v5}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
- 
-     move-result p1
- 
--    if-eqz p1, :cond_8
-+    if-eqz p1, :cond_b
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -330,12 +460,12 @@
- 
-     invoke-static {p1, v5}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite(ILjava/lang/String;)Z
- 
--    :cond_8
-+    :cond_b
-     invoke-static {v4}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
- 
-     move-result p1
- 
--    if-eqz p1, :cond_9
-+    if-eqz p1, :cond_c
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -343,7 +473,7 @@
- 
-     invoke-static {p1, v4}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite(ILjava/lang/String;)Z
- 
--    :cond_9
-+    :cond_c
-     new-instance p1, Ljava/lang/StringBuilder;
- 
-     invoke-direct {p1, v0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-@@ -354,24 +484,24 @@
- 
-     invoke-static {p1, p0, v7}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
- 
--    :cond_a
-+    :cond_d
-     return-void
- 
--    :cond_b
-+    :cond_e
-     iget-object p0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-     invoke-static {p0}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->-$$Nest$msetting_is_changed(Lcom/samsung/android/hardware/display/SemMdnieManagerService;)V
- 
-     return-void
- 
--    :cond_c
-+    :cond_f
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->VIVIDNESS_STATE_URI:Landroid/net/Uri;
- 
-     invoke-virtual {p1, p2}, Landroid/net/Uri;->equals(Ljava/lang/Object;)Z
- 
-     move-result p1
- 
--    if-eqz p1, :cond_10
-+    if-eqz p1, :cond_13
- 
-     invoke-static {v7, v3}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
- 
-@@ -383,7 +513,7 @@
- 
-     move-result p1
- 
--    if-lez p1, :cond_10
-+    if-lez p1, :cond_13
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -393,7 +523,7 @@
- 
-     iget-boolean p1, p1, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mSupportAPmDNIe:Z
- 
--    if-eqz p1, :cond_d
-+    if-eqz p1, :cond_10
- 
-     new-instance p1, Ljava/lang/StringBuilder;
- 
-@@ -413,14 +543,14 @@
- 
-     invoke-virtual {p2, p1}, Lcom/samsung/android/displayaiqe/DisplayAiqeManager;->setVividnessMode(I)Z
- 
--    goto :goto_1
-+    goto :goto_2
- 
--    :cond_d
-+    :cond_10
-     invoke-static {v5}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
- 
-     move-result p1
- 
--    if-eqz p1, :cond_e
-+    if-eqz p1, :cond_11
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -428,12 +558,12 @@
- 
-     invoke-static {p1, v5}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite(ILjava/lang/String;)Z
- 
--    :cond_e
-+    :cond_11
-     invoke-static {v4}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
- 
-     move-result p1
- 
--    if-eqz p1, :cond_f
-+    if-eqz p1, :cond_12
- 
-     iget-object p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-@@ -441,7 +571,7 @@
- 
-     invoke-static {p1, v4}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite(ILjava/lang/String;)Z
- 
--    :cond_f
-+    :cond_12
-     new-instance p1, Ljava/lang/StringBuilder;
- 
-     invoke-direct {p1, v0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-@@ -452,8 +582,8 @@
- 
-     invoke-static {p1, p2, v7}, Lcom/android/server/RescueParty$RescuePartyObserver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
- 
--    :cond_10
--    :goto_1
-+    :cond_13
-+    :goto_2
-     iget-object p0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService$SettingsObserver;->this$0:Lcom/samsung/android/hardware/display/SemMdnieManagerService;
- 
-     invoke-static {p0}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->-$$Nest$msetting_is_changed(Lcom/samsung/android/hardware/display/SemMdnieManagerService;)V
+     :cond_0
 diff --git a/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService.smali b/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService.smali
-index d3e9a084d..802d2e27b 100644
+index ccdbfe6c..7befa9ab 100644
 --- a/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService.smali
 +++ b/smali_classes2/com/samsung/android/hardware/display/SemMdnieManagerService.smali
-@@ -58,6 +58,8 @@
+@@ -30,6 +30,12 @@
  
- .field public mEnvironmentAdaptiveDisplayEnabled:Z
+ .field public mBlueFilterIndex:I
  
++.field public mBlueLightFilterAdaptiveModeEnabled:Z
++
++.field public mBlueLightFilterCustomAlwaysOn:Z
++
++.field public mBlueLightFilterCustomAvailableTime:Z
++
+ .field public final mBlueLightFilterCustomStringArray:[Ljava/lang/String;
+ 
+ .field public final mBlueLightFilterCustomValueArray:[I
+@@ -70,7 +76,11 @@
+ 
+ .field public final mEnhancedComfortCustomValueArray:[I
+ 
+-.field public final mEnvironmentAdaptiveDisplayPrevCCT:I
++.field public mEnvironmentAdaptiveDisplayEnabled:Z
++
++.field public mEnvironmentAdaptiveDisplayPrevCCT:I
++
 +.field public final mEnvironmentAdaptiveDisplaySupported:Z
+ 
+ .field public final mFoldStateListener:Lcom/samsung/android/hardware/display/SemMdnieManagerService$2;
+ 
+@@ -241,6 +251,10 @@
+ 
+     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mBlueLightFilterEnabled:Z
+ 
++    iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mBlueLightFilterAdaptiveModeEnabled:Z
 +
- .field public final mMdnieWhiteRGBSupported:Z
- 
- .field public final mNaturalGammaScreenModeSupported:Z
-@@ -68,6 +70,8 @@
- 
- .field public final mNightDimSupported:Z
- 
-+.field public final mNightDisplayOffsetDelta:I
++    iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mBlueLightFilterCustomAlwaysOn:Z
 +
- .field public mNightMode:Z
+     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mNightDimModeEnabled:Z
  
- .field public mNightModeBlock:Z
-@@ -100,6 +104,8 @@
+     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mAlwaysOnDisplayEnabled:Z
+@@ -249,8 +263,14 @@
  
- .field public mVividnessIndex:I
+     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mMdnieWhiteRGBSupported:Z
  
-+.field public mWhiteBalancePresetIndex:I
++    iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplayEnabled:Z
 +
- .field public mWorkBlueFilter:Z
- 
- 
-@@ -245,6 +251,10 @@
- 
-     invoke-static {v9, v2, v5, v3}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
- 
-+    move-result v2
-+
-+    iput v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mWhiteBalancePresetIndex:I
-+
-     iget-object v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
- 
-     invoke-virtual {v2}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-@@ -831,6 +841,8 @@
- 
-     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplayEnabled:Z
- 
 +    iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
 +
      iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mUseAfterimageCompensationServiceConfig:Z
  
-     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mBlueLightFilterCustomAvailableTime:Z
-@@ -853,6 +865,14 @@
++    iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mBlueLightFilterCustomAvailableTime:Z
++
+     iput-boolean v5, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mDefaultDisplay:Z
  
-     iput v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mNaturalModeVersion:I
- 
-+    const/4 v7, 0x2
-+
-+    iput v7, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mWhiteBalancePresetIndex:I
-+
-+    const/16 v7, 0x1f4
-+
-+    iput v7, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mNightDisplayOffsetDelta:I
-+
-     const/4 v7, -0x6
- 
-     const/16 v8, -0x14
-@@ -1141,6 +1161,8 @@
+     iput-boolean v2, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mNightDimOffMode:Z
+@@ -637,6 +657,8 @@
  
      iput-boolean v4, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mMdnieWhiteRGBSupported:Z
  
@@ -1384,24 +505,24 @@ index d3e9a084d..802d2e27b 100644
      invoke-virtual {v1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
  
      move-result-object v4
-@@ -1617,7 +1639,15 @@
+@@ -1283,7 +1305,15 @@
  
-     invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
  
 -    const-string v3, ", S_EAD : false, SemMdnieMdnieManager AFC config : "
 +    const-string v3, ", S_EAD : "
 +
-+    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    iget-boolean v3, v0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
 +
-+    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
++    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
 +
 +    const-string v3, ", SemMdnieMdnieManager AFC config : "
  
-     invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  
-@@ -1809,6 +1839,121 @@
+@@ -1483,6 +1513,121 @@
      return p0
  .end method
  
@@ -1523,24 +644,43 @@ index d3e9a084d..802d2e27b 100644
  .method public static sysfsWrite_CB(ILjava/lang/String;[I)Z
      .locals 4
  
-@@ -2876,14 +3021,150 @@
+@@ -3107,14 +3252,165 @@
  .end method
  
  .method public final setEadMode(II[I)V
 -    .locals 0
-+    .locals 2
++    .locals 4
 +
-+    iget-boolean p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
++    iget-boolean v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
 +
-+    if-eqz p1, :cond_1
++    if-eqz v0, :cond_2
 +
++    iget v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mNaturalModeVersion:I
++
++    const/4 v1, 0x4
++
++    const/4 v2, 0x1
++
++    const/4 v3, 0x0
++
++    if-lt v0, v1, :cond_0
++
++    const-string p2, "EAD"
++
++    invoke-virtual {p0, p2, p1, v3, v2}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->setColorMatrixCct(Ljava/lang/String;IIZ)V
++
++    iput p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplayPrevCCT:I
++
++    return-void
++
++    :cond_0
 +    iget-boolean p1, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mSupportAPmDNIe:Z
 +
 +    const-string v0, ")"
 +
 +    const-string/jumbo v1, "SemMdnieManagerService"
 +
-+    if-eqz p1, :cond_0
++    if-eqz p1, :cond_1
 +
 +    iget-object p0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mDisplayAiqeManager:Lcom/samsung/android/displayaiqe/DisplayAiqeManager;
 +
@@ -1561,17 +701,17 @@ index d3e9a084d..802d2e27b 100644
 +    move-result-object p0
 +
 +    invoke-static {v1, p0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
+ 
+     return-void
 +
-+    return-void
-+
-+    :cond_0
++    :cond_1
 +    const-string p0, "/sys/class/mdnie/mdnie/whiteRGB"
 +
 +    invoke-static {p0}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/String;)Z
 +
 +    move-result p1
 +
-+    if-eqz p1, :cond_1
++    if-eqz p1, :cond_2
 +
 +    invoke-static {p0, p3}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWrite_AdaptiveArray(Ljava/lang/String;[I)V
 +
@@ -1581,9 +721,7 @@ index d3e9a084d..802d2e27b 100644
 +
 +    invoke-direct {p0, p1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
 +
-+    const/4 p1, 0x0
-+
-+    aget p1, p3, p1
++    aget p1, p3, v3
 +
 +    invoke-virtual {p0, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 +
@@ -1591,9 +729,7 @@ index d3e9a084d..802d2e27b 100644
 +
 +    invoke-virtual {p0, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
-+    const/4 p2, 0x1
- 
-+    aget p2, p3, p2
++    aget p2, p3, v2
 +
 +    invoke-virtual {p0, p2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 +
@@ -1603,10 +739,10 @@ index d3e9a084d..802d2e27b 100644
 +
 +    aget p1, p3, p1
 +
-+    invoke-static {p1, v0, v1, p0}, Lcom/android/server/CustomizedBinderCallsStatsInternal$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
++    invoke-static {p0, p1, v0, v1}, Lcom/android/server/BootReceiver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;Ljava/lang/String;)V
 +
-+    :cond_1
-     return-void
++    :cond_2
++    return-void
  .end method
  
  .method public final setEadModeSub(II[I)V
@@ -1659,9 +795,9 @@ index d3e9a084d..802d2e27b 100644
 +    invoke-virtual {p0, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    const/4 v1, 0x1
-+
-+    aget v1, p3, v1
  
++    aget v1, p3, v1
++
 +    invoke-virtual {p0, v1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 +
 +    invoke-virtual {p0, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
@@ -1670,18 +806,18 @@ index d3e9a084d..802d2e27b 100644
 +
 +    aget p2, p3, p2
 +
-+    invoke-static {p2, p1, v0, p0}, Lcom/android/server/CustomizedBinderCallsStatsInternal$$ExternalSyntheticOutline0;->m(ILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
++    invoke-static {p0, p2, p1, v0}, Lcom/android/server/BootReceiver$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;Ljava/lang/String;)V
 +
 +    :cond_1
      return-void
  .end method
  
-@@ -3893,28 +4174,167 @@
+@@ -4186,31 +4482,181 @@
  .end method
  
  .method public final setWhiteRGB(IIIIII)Z
 -    .locals 1
-+    .locals 7
++    .locals 8
  
 -    const-string/jumbo p0, "setWhiteRGB("
 +    const-string/jumbo v0, "setWhiteRGB("
@@ -1689,19 +825,19 @@ index d3e9a084d..802d2e27b 100644
 -    const-string v0, ","
 +    const-string v1, ","
  
--    invoke-static {p1, p2, p0, v0, v0}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    invoke-static {p1, p2, v0, v1, v1}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
+-    invoke-static {p1, p2, p0, v0, v0}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline1;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-static {p1, p2, v0, v1, v1}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline1;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
  
 -    move-result-object p0
 +    move-result-object v0
  
--    invoke-static {p3, p4, v0, v0, p0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
-+    invoke-static {p3, p4, v1, v1, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
+-    invoke-static {p3, p4, v0, v0, p0}, Lcom/android/server/HeapdumpWatcher$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
++    invoke-static {p3, p4, v1, v1, v0}, Lcom/android/server/HeapdumpWatcher$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
  
 -    const-string p1, ")"
 +    const-string v2, ")"
 +
-+    invoke-static {p5, p6, v1, v2, v0}, Lcom/android/server/am/BroadcastController$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
++    invoke-static {p5, p6, v1, v2, v0}, Lcom/android/server/am/ProcessList$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
 +
 +    move-result-object v0
 +
@@ -1711,28 +847,43 @@ index d3e9a084d..802d2e27b 100644
 +
 +    iget-boolean v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplaySupported:Z
 +
++    const/4 v4, 0x0
++
 +    if-eqz v0, :cond_3
 +
-+    iget-boolean v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mEnvironmentAdaptiveDisplayEnabled:Z
- 
--    invoke-static {p5, p6, v0, p1, p0}, Lcom/android/server/am/BroadcastController$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
-+    if-eqz v0, :cond_3
++    iget-object v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mContext:Landroid/content/Context;
++
++    invoke-virtual {v0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
++
++    move-result-object v0
++
++    const-string/jumbo v5, "ead_enabled"
++
++    const/4 v6, -0x2
++
++    invoke-static {v0, v5, v4, v6}, Landroid/provider/Settings$System;->getIntForUser(Landroid/content/ContentResolver;Ljava/lang/String;II)I
++
++    move-result v0
++
++    const/4 v5, 0x1
++
++    if-ne v0, v5, :cond_3
 +
 +    iget-boolean v0, p0, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->mSupportAPmDNIe:Z
 +
-+    const-string v4, ") , Sub RGB offset ("
++    const-string v6, ") , Sub RGB offset ("
 +
 +    if-eqz v0, :cond_0
 +
 +    const-string v0, "AP setWhiteBalanceMode : Main RGB offset ("
 +
-+    invoke-static {p1, p2, v0, v1, v1}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-static {p1, p2, v0, v1, v1}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline1;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    move-result-object v0
 +
-+    invoke-static {p3, p4, v4, v1, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
++    invoke-static {p3, p4, v6, v1, v0}, Lcom/android/server/HeapdumpWatcher$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
 +
-+    invoke-static {p5, p6, v1, v2, v0}, Lcom/android/server/am/BroadcastController$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
++    invoke-static {p5, p6, v1, v2, v0}, Lcom/android/server/am/ProcessList$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
 +
 +    move-result-object v0
 +
@@ -1742,7 +893,7 @@ index d3e9a084d..802d2e27b 100644
 +
 +    invoke-virtual/range {p0 .. p6}, Lcom/samsung/android/displayaiqe/DisplayAiqeManager;->setWhiteBalanceMode(IIIIII)Z
 +
-+    goto :goto_0
++    return v4
 +
 +    :cond_0
 +    const-string p0, "/sys/class/mdnie/mdnie/whiteRGB"
@@ -1751,7 +902,7 @@ index d3e9a084d..802d2e27b 100644
 +
 +    move-result v0
 +
-+    const-string v5, " "
++    const-string v4, " "
 +
 +    if-eqz v0, :cond_1
 +
@@ -1761,30 +912,31 @@ index d3e9a084d..802d2e27b 100644
 +
 +    invoke-static {p1}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
 +
-+    move-result-object v6
++    move-result-object v7
 +
-+    invoke-virtual {v0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
-+    invoke-virtual {v0, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    invoke-static {p2}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
 +
-+    move-result-object v6
++    move-result-object v7
 +
-+    invoke-virtual {v0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
-+    invoke-virtual {v0, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    invoke-static {p3}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
 +
-+    move-result-object v6
++    move-result-object v7
 +
-+    invoke-virtual {v0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 +
 +    move-result-object v0
-+
+ 
+-    invoke-static {p5, p6, v0, p1, p0}, Lcom/android/server/am/ProcessList$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
 +    invoke-static {p0, v0}, Lcom/samsung/android/hardware/display/SemMdnieManagerService;->sysfsWriteSting(Ljava/lang/String;Ljava/lang/String;)Z
 +
 +    :cond_1
@@ -1802,25 +954,25 @@ index d3e9a084d..802d2e27b 100644
 +
 +    invoke-static {p4}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
 +
-+    move-result-object v6
++    move-result-object v7
 +
-+    invoke-virtual {v0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
-+    invoke-virtual {v0, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    invoke-static {p5}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
 +
-+    move-result-object v6
++    move-result-object v7
 +
-+    invoke-virtual {v0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
-+    invoke-virtual {v0, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    invoke-static {p6}, Ljava/lang/Integer;->toString(I)Ljava/lang/String;
 +
-+    move-result-object v5
++    move-result-object v4
 +
-+    invoke-virtual {v0, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 +
 +    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 +
@@ -1831,29 +983,29 @@ index d3e9a084d..802d2e27b 100644
 +    :cond_2
 +    const-string p0, "DDI setWhiteBalanceMode : Main RGB offset ("
 +
-+    invoke-static {p1, p2, p0, v1, v1}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
++    invoke-static {p1, p2, p0, v1, v1}, Lcom/android/internal/util/jobs/ArrayUtils$$ExternalSyntheticOutline1;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
  
      move-result-object p0
  
 -    const-string/jumbo p1, "SemMdnieManagerService"
-+    invoke-static {p3, p4, v4, v1, p0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
-+
-+    invoke-static {p5, p6, v1, v2, p0}, Lcom/android/server/am/BroadcastController$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
-+
-+    move-result-object p0
-+
-+    invoke-static {v3, p0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
++    invoke-static {p3, p4, v6, v1, p0}, Lcom/android/server/HeapdumpWatcher$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
  
 -    invoke-static {p1, p0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
-+    const/4 p0, 0x1
++    invoke-static {p5, p6, v1, v2, p0}, Lcom/android/server/am/ProcessList$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)Ljava/lang/String;
+ 
+-    const/4 p0, 0x0
++    move-result-object p0
+ 
+-    return p0
++    invoke-static {v3, p0}, Landroid/util/Slog;->i(Ljava/lang/String;Ljava/lang/String;)I
 +
-+    return p0
- 
++    return v5
++
 +    :cond_3
-+    :goto_0
-     const/4 p0, 0x0
++    return v4
+ .end method
  
-     return p0
+ .method public final setmDNIeAccessibilityMode(IZ)Z
 -- 
-2.51.1
+2.55.0
 
